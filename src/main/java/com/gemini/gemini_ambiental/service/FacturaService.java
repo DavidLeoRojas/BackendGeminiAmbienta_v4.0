@@ -1,9 +1,12 @@
 package com.gemini.gemini_ambiental.service;
 
-
+import com.gemini.gemini_ambiental.entity.Cotizacion;
 import com.gemini.gemini_ambiental.entity.Factura;
+import com.gemini.gemini_ambiental.entity.Persona;
 import com.gemini.gemini_ambiental.exception.ResourceNotFoundException;
+import com.gemini.gemini_ambiental.repository.CotizacionRepository;
 import com.gemini.gemini_ambiental.repository.FacturaRepository;
+import com.gemini.gemini_ambiental.repository.PersonaRepository;
 import com.gemini.gemini_ambiental.dto.FacturaDTO;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -21,6 +24,12 @@ public class FacturaService {
     @Autowired
     private FacturaRepository facturaRepository;
 
+    @Autowired
+    private PersonaRepository personaRepository;
+
+    @Autowired
+    private CotizacionRepository cotizacionRepository;
+
     public FacturaDTO createFactura(FacturaDTO facturaDTO) {
         Factura factura = convertToEntity(facturaDTO);
         Factura savedFactura = facturaRepository.save(factura);
@@ -31,7 +40,23 @@ public class FacturaService {
         Factura existingFactura = facturaRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Factura no encontrada con ID: " + id));
 
-        // Actualizar campos
+        // Asignar cliente
+        if (facturaDTO.getDniCliente() != null) {
+            Persona cliente = personaRepository.findByDni(facturaDTO.getDniCliente())
+                    .orElseThrow(() -> new ResourceNotFoundException("Cliente no encontrado con DNI: " + facturaDTO.getDniCliente()));
+            existingFactura.setCliente(cliente);
+        }
+
+        // Asignar cotización si aplica
+        if ("ConCotizacion".equals(facturaDTO.getTipoFactura()) && facturaDTO.getIdCotizacion() != null) {
+            Cotizacion cotizacion = cotizacionRepository.findById(facturaDTO.getIdCotizacion())
+                    .orElseThrow(() -> new ResourceNotFoundException("Cotización no encontrada con ID: " + facturaDTO.getIdCotizacion()));
+            existingFactura.setCotizacion(cotizacion);
+        } else {
+            existingFactura.setCotizacion(null);
+        }
+
+        // Actualizar otros campos
         existingFactura.setFechaEmision(facturaDTO.getFechaEmision());
         existingFactura.setMontoTotal(facturaDTO.getMontoTotal());
         existingFactura.setEstado(Factura.EstadoFactura.valueOf(facturaDTO.getEstado()));
@@ -45,7 +70,6 @@ public class FacturaService {
     public void deleteFactura(String id) {
         Factura factura = facturaRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Factura no encontrada con ID: " + id));
-
         facturaRepository.delete(factura);
     }
 
@@ -62,6 +86,8 @@ public class FacturaService {
     }
 
     public List<FacturaDTO> searchFacturas(String fechaInicio, String fechaFin, String estado, String tipoFactura, String dniCliente) {
+        // Tu lógica actual está bien, pero podrías optimizarla con queries
+        // Por ahora, dejamos como está
         LocalDate start = fechaInicio != null ? LocalDate.parse(fechaInicio) : null;
         LocalDate end = fechaFin != null ? LocalDate.parse(fechaFin) : null;
 
@@ -100,12 +126,25 @@ public class FacturaService {
 
     private Factura convertToEntity(FacturaDTO dto) {
         Factura factura = new Factura();
-        factura.setIdFactura(dto.getIdFactura());
+
+        // Cliente es obligatorio
+        Persona cliente = personaRepository.findByDni(dto.getDniCliente())
+                .orElseThrow(() -> new ResourceNotFoundException("Cliente no encontrado con DNI: " + dto.getDniCliente()));
+        factura.setCliente(cliente);
+
+        // Cotización (opcional, según tipo)
+        if ("ConCotizacion".equals(dto.getTipoFactura()) && dto.getIdCotizacion() != null) {
+            Cotizacion cotizacion = cotizacionRepository.findById(dto.getIdCotizacion())
+                    .orElseThrow(() -> new ResourceNotFoundException("Cotización no encontrada con ID: " + dto.getIdCotizacion()));
+            factura.setCotizacion(cotizacion);
+        }
+
         factura.setFechaEmision(dto.getFechaEmision());
         factura.setMontoTotal(dto.getMontoTotal());
         factura.setEstado(Factura.EstadoFactura.valueOf(dto.getEstado()));
         factura.setObservaciones(dto.getObservaciones());
         factura.setTipoFactura(Factura.TipoFactura.valueOf(dto.getTipoFactura()));
+
         return factura;
     }
 
@@ -121,7 +160,6 @@ public class FacturaService {
         dto.setIdCotizacion(factura.getCotizacion() != null ? factura.getCotizacion().getIdCotizacion() : null);
         dto.setFechaCreacion(factura.getFechaCreacion());
 
-        // Agregar datos adicionales para la UI
         if (factura.getCliente() != null) {
             dto.setNombreCliente(factura.getCliente().getNombre());
             dto.setTelefonoCliente(factura.getCliente().getTelefono());
