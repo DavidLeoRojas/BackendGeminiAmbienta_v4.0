@@ -3,9 +3,11 @@ package com.gemini.gemini_ambiental.service;
 
 import com.gemini.gemini_ambiental.dto.TipoServicioDTO;
 import com.gemini.gemini_ambiental.entity.CategoriaServicio;
+import com.gemini.gemini_ambiental.entity.Servicio;
 import com.gemini.gemini_ambiental.entity.TipoServicio;
 import com.gemini.gemini_ambiental.exception.ResourceNotFoundException;
 import com.gemini.gemini_ambiental.repository.CategoriaServicioRepository;
+import com.gemini.gemini_ambiental.repository.ServicioRepository;
 import com.gemini.gemini_ambiental.repository.TipoServicioRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -15,6 +17,9 @@ import java.util.stream.Collectors;
 
 @Service
 public class TipoServicioService {
+
+    @Autowired
+    private ServicioRepository servicioRepository; // <-- Inyectar
 
     @Autowired
     private TipoServicioRepository tipoServicioRepository;
@@ -84,9 +89,31 @@ public class TipoServicioService {
 
     // Método para eliminar un tipo de servicio
     public void deleteTipoServicio(String id) {
-        if (!tipoServicioRepository.existsById(id)) {
-            throw new ResourceNotFoundException("Tipo de servicio no encontrado con ID: " + id);
+        // 1. Verificar si el tipo de servicio existe
+        TipoServicio tipo = tipoServicioRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Tipo de servicio no encontrado con ID: " + id));
+
+        // 2. Buscar servicios agendados que usan este tipo de servicio
+        // Asumiendo que Servicio tiene un campo tipoServicio (TipoServicio)
+        List<Servicio> serviciosVinculados = servicioRepository.findByTipoServicio_IdTipoServicio(id);
+
+        // 3. Verificar si hay servicios activos (no Completados ni Cancelados)
+        // Asumiendo que los estados válidos para permitir la eliminación son "Completado" y "Cancelado"
+        List<Servicio> serviciosActivos = serviciosVinculados.stream()
+                .filter(s -> !("Completado".equals(s.getEstado()) || "Cancelado".equals(s.getEstado())))
+                .toList();
+
+        // 4. Si hay servicios activos, lanzar una excepción
+        if (!serviciosActivos.isEmpty()) {
+            String detalles = serviciosActivos.stream()
+                    .map(s -> "ID: " + s.getIdServicio() + ", Fecha: " + s.getFecha() + ", Hora: " + s.getHora() + ", Cliente: " + (s.getCliente() != null ? s.getCliente().getNombre() : "N/A") + ", Estado: " + s.getEstado())
+                    .collect(Collectors.joining("\n - ", " - ", ""));
+            throw new IllegalArgumentException("No se puede eliminar el tipo de servicio '" + tipo.getNombreServicio() + "' porque hay servicios agendados activos que lo utilizan (no están Completados o Cancelados):\n" + detalles);
         }
+
+        // 5. Si no hay servicios activos, proceder con la eliminación
+        // Si solo se permiten eliminar si todos están Completados o Cancelados, no hay problema.
+        // Si hay servicios Cancelados o Completados, aún se puede eliminar el tipo de servicio.
         tipoServicioRepository.deleteById(id);
     }
 
