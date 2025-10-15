@@ -1,6 +1,5 @@
 package com.gemini.gemini_ambiental.entity;
 
-
 import jakarta.persistence.*;
 import jakarta.validation.constraints.*;
 import lombok.*;
@@ -8,7 +7,8 @@ import lombok.*;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.util.UUID;
+import java.util.List;
+import java.util.ArrayList;
 
 @Entity
 @Table(name = "Factura")
@@ -52,12 +52,25 @@ public class Factura {
     @JoinColumn(name = "ID_cotizacion")
     private Cotizacion cotizacion;
 
+    @OneToMany(mappedBy = "factura", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
+    private List<DetalleFactura> detalleFactura = new ArrayList<>();
+
     @Column(name = "fecha_creacion", updatable = false)
     private LocalDateTime fechaCreacion = LocalDateTime.now();
 
     @PrePersist
     protected void onCreate() {
         this.fechaCreacion = LocalDateTime.now();
+    }
+
+    public void addDetalleFactura(DetalleFactura detalle) {
+        detalleFactura.add(detalle);
+        detalle.setFactura(this);
+    }
+
+    public void removeDetalleFactura(DetalleFactura detalle) {
+        detalleFactura.remove(detalle);
+        detalle.setFactura(null);
     }
 
     public enum EstadoFactura {

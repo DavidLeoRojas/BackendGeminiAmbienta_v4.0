@@ -1,6 +1,5 @@
 package com.gemini.gemini_ambiental.repository;
 
-
 import com.gemini.gemini_ambiental.entity.Factura;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
@@ -15,9 +14,7 @@ import java.util.Optional;
 public interface FacturaRepository extends JpaRepository<Factura, String> {
 
     List<Factura> findByClienteDni(String dniCliente);
-
     List<Factura> findByEstado(Factura.EstadoFactura estado);
-
     List<Factura> findByTipoFactura(Factura.TipoFactura tipoFactura);
 
     @Query("SELECT f FROM Factura f WHERE f.fechaEmision >= :startDate AND f.fechaEmision <= :endDate ORDER BY f.fechaEmision DESC")
@@ -29,6 +26,12 @@ public interface FacturaRepository extends JpaRepository<Factura, String> {
     @Query("SELECT COUNT(f) FROM Factura f WHERE f.estado = 'Pendiente'")
     Long countPendingInvoices();
 
-    @Query("SELECT f FROM Factura f JOIN FETCH f.cliente LEFT JOIN FETCH f.cotizacion WHERE f.idFactura = :id")
+    // --- ACTUALIZADO: Incluir detalleFactura y producto ---
+    @Query("SELECT f FROM Factura f " +
+            "JOIN FETCH f.cliente " +
+            "LEFT JOIN FETCH f.cotizacion " +
+            "LEFT JOIN FETCH f.detalleFactura df " +
+            "LEFT JOIN FETCH df.producto " +
+            "WHERE f.idFactura = :id")
     Optional<Factura> findByIdWithRelations(@Param("id") String id);
 }

@@ -155,7 +155,6 @@ public class PersonaService {
         persona.setCorreo(dto.getCorreo());
         persona.setRol(dto.getRol());
 
-        // ... resto del código para asignar otros campos ...
         // Asegúrate de manejar tipoPersona de la misma manera si aplica
         String tipoPersonaStr = dto.getTipoPersona();
         if (tipoPersonaStr == null || tipoPersonaStr.trim().isEmpty()) {
