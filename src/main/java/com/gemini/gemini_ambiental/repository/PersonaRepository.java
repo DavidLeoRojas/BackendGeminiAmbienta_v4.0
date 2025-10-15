@@ -10,11 +10,14 @@ import java.util.List;
 import java.util.Optional;
 
 @Repository
-public interface PersonaRepository extends JpaRepository<Persona, String> {
+public interface PersonaRepository extends JpaRepository<Persona, String> { // ✅ String como tipo de ID
 
     Optional<Persona> findByDni(String dni);
 
     Optional<Persona> findByCorreo(String correo);
+
+    @Query("SELECT p FROM Persona p WHERE p.correo = :email AND p.dni = :dni")
+    Optional<Persona> findByCorreoAndDni(@Param("email") String email, @Param("dni") String dni);
 
     List<Persona> findByNombreContainingIgnoreCase(String nombre);
 

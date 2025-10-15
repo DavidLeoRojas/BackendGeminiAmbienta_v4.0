@@ -3,12 +3,10 @@ package com.gemini.gemini_ambiental.entity;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Pattern;
 import lombok.*;
 
 import java.time.LocalDateTime;
-import java.util.UUID;
 
 @Entity
 @Table(name = "Persona")
@@ -21,7 +19,7 @@ public class Persona {
 
     @Id
     @Column(name = "DNI", length = 20)
-    private String dni;
+    private String dni; // ← Clave primaria
 
     @NotBlank(message = "El tipo de documento es obligatorio")
     @Column(name = "tipo_dni", length = 50, nullable = false)
@@ -41,17 +39,20 @@ public class Persona {
 
     @NotBlank(message = "El rol es obligatorio")
     @Column(name = "rol", length = 50, nullable = false)
-    private String rol; // 'Cliente', 'Empleado', 'Proveedor'
+    private String rol;
 
     @Enumerated(EnumType.STRING)
     @Column(name = "tipo_persona", length = 50, nullable = false)
-    private TipoPersona tipoPersona = TipoPersona.Natural; // Valor por defecto
+    private TipoPersona tipoPersona = TipoPersona.Natural;
 
     @Column(name = "representante_legal", length = 20)
     private String representanteLegal;
 
     @Column(name = "nit", length = 20)
     private String nit;
+
+    @Column(name = "password", length = 255) // 🔐
+    private String password;
 
     @ManyToOne
     @JoinColumn(name = "ID_direccion")
