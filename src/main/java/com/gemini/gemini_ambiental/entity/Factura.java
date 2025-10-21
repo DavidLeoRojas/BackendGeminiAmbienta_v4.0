@@ -58,6 +58,9 @@ public class Factura {
     @Column(name = "fecha_creacion", updatable = false)
     private LocalDateTime fechaCreacion = LocalDateTime.now();
 
+    @Column(name = "valor_servicio", precision = 12, scale = 2)
+    private BigDecimal valorServicio;
+
     @PrePersist
     protected void onCreate() {
         this.fechaCreacion = LocalDateTime.now();
@@ -71,6 +74,14 @@ public class Factura {
     public void removeDetalleFactura(DetalleFactura detalle) {
         detalleFactura.remove(detalle);
         detalle.setFactura(null);
+    }
+
+    public BigDecimal getValorServicio() {
+        return valorServicio;
+    }
+
+    public void setValorServicio(BigDecimal valorServicio) {
+        this.valorServicio = valorServicio;
     }
 
     public enum EstadoFactura {

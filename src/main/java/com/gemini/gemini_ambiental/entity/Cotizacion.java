@@ -1,16 +1,19 @@
 package com.gemini.gemini_ambiental.entity;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
+import com.fasterxml.jackson.annotation.JsonManagedReference;
 import jakarta.persistence.*;
-import jakarta.validation.constraints.*;
 import lombok.*;
+import org.hibernate.annotations.GenericGenerator;
 
 import java.math.BigDecimal;
-import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.util.UUID;
+import java.time.LocalDate;
+import java.util.ArrayList;
+import java.util.List;
 
 @Entity
-@Table(name = "Cotizacion")
+@Table(name = "cotizacion")
 @Getter
 @Setter
 @NoArgsConstructor
@@ -19,56 +22,97 @@ import java.util.UUID;
 public class Cotizacion {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.UUID)
-    @Column(name = "ID_cotizacion", length = 36)
+    @GeneratedValue(generator = "uuid2")
+    @GenericGenerator(name = "uuid2", strategy = "uuid2")
+    @Column(name = "id_cotizacion", length = 36, updatable = false)
     private String idCotizacion;
 
-    @ManyToOne
-    @JoinColumn(name = "DNI_cliente", nullable = false)
+    // --- RELACIÓN CON CLIENTE ---
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "dni_cliente", referencedColumnName = "dni", nullable = false)
+    @ToString.Exclude
     private Persona cliente;
 
-    @ManyToOne
-    @JoinColumn(name = "DNI_empleado")
+    @Column(name = "dni_empleado", length = 20)
+    private String dniEmpleado;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "dni_empleado", referencedColumnName = "dni", insertable = false, updatable = false)
+    @ToString.Exclude
     private Persona empleado;
 
-    @Enumerated(EnumType.STRING) // <-- Esta anotación es clave
-    @Column(name = "estado", nullable = false) // <-- Y esta columna también
-    private EstadoCotizacion estado = EstadoCotizacion.Pendiente; // <-- Aquí usas el enum
-
-    @NotNull(message = "La fecha de solicitud es obligatoria")
+    @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss")
     @Column(name = "fecha_solicitud", nullable = false)
     private LocalDateTime fechaSolicitud;
 
+    @JsonFormat(pattern = "yyyy-MM-dd")
     @Column(name = "fecha_preferida")
     private LocalDate fechaPreferida;
 
+    @JsonFormat(pattern = "yyyy-MM-dd")
     @Column(name = "fecha_respuesta")
-    private LocalDateTime fechaRespuesta;
+    private LocalDate fechaRespuesta;
 
-    @Column(name = "prioridad", length = 50)
+    @Column(name = "estado", nullable = false)
+    private String estado;
+
+    @Column(name = "prioridad", length = 20)
     private String prioridad;
 
-    @Column(name = "descripcion_problema", length = 1000)
-    private String descripcionProblema;
-
-    @Column(name = "notas_internas", length = 500)
-    private String notasInternas;
-
-    @Column(name = "costo_total_cotizacion", precision = 12, scale = 2)
+    @Column(name = "costo_total_cotizacion", precision = 12, scale = 2, nullable = false)
     private BigDecimal costoTotalCotizacion;
 
+    @Column(name = "descripcion_problema", columnDefinition = "TEXT")
+    private String descripcionProblema;
+
+    @Column(name = "notas_internas", columnDefinition = "TEXT")
+    private String notasInternas;
+
+    @Builder.Default
+    @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss")
     @Column(name = "fecha_creacion", updatable = false)
     private LocalDateTime fechaCreacion = LocalDateTime.now();
 
-    @PrePersist
-    protected void onCreate() {
-        this.fechaCreacion = LocalDateTime.now();
+    @OneToMany(mappedBy = "cotizacion", cascade = CascadeType.ALL, fetch = FetchType.LAZY, orphanRemoval = true)
+    @JsonManagedReference
+    @Builder.Default
+    private List<DetalleCotizacion> detalleCotizacion = new ArrayList<>();
+
+    // --- MÉTODO PARA OBTENER EL DNI DEL CLIENTE ---
+    public String getDniCliente() {
+        return cliente != null ? cliente.getDni() : null;
     }
 
-    // --- DEFINICIÓN DEL ENUM EstadoCotizacion ---
-    // Debe estar DENTRO de la clase Cotizacion
-    public enum EstadoCotizacion {
-        Pendiente, Aprobada, Rechazada, Finalizada
+    public EstadoCotizacion getEstadoEnum() {
+        if (estado == null) {
+            return EstadoCotizacion.PENDIENTE;
+        }
+        try {
+            String estadoNormalizado = estado.trim().toUpperCase();
+            return EstadoCotizacion.valueOf(estadoNormalizado);
+        } catch (IllegalArgumentException e) {
+            return EstadoCotizacion.PENDIENTE;
+        }
     }
-    // --- FIN DEFINICIÓN ---
+
+    // Método para agregar detalle
+    public void agregarDetalle(DetalleCotizacion detalle) {
+        detalle.setCotizacion(this);
+        this.detalleCotizacion.add(detalle);
+    }
+
+    // Método para calcular costo total desde detalles
+    @Transient
+    public BigDecimal calcularCostoTotalDesdeDetalles() {
+        if (detalleCotizacion == null || detalleCotizacion.isEmpty()) {
+            return BigDecimal.ZERO;
+        }
+        return detalleCotizacion.stream()
+                .map(DetalleCotizacion::getSubtotal)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+    }
+
+    public enum EstadoCotizacion {
+        PENDIENTE, APROBADA, RECHAZADA, FINALIZADA, CANCELADA_CLIENTE, CANCELADA_EMPRESA
+    }
 }

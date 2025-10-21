@@ -23,6 +23,9 @@ public class FacturaDTO {
     private String idCotizacion;
     private LocalDateTime fechaCreacion;
 
+    // --- NUEVO: Campo valorServicio ---
+    private BigDecimal valorServicio;
+
     // --- NUEVO: Detalle del DTO ---
     private List<DetalleFacturaDTO> detalleFactura;
 

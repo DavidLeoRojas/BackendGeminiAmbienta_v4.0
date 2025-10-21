@@ -6,27 +6,31 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
-import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
 
 @Repository
 public interface CotizacionRepository extends JpaRepository<Cotizacion, String> {
 
-    List<Cotizacion> findByEstado(Cotizacion.EstadoCotizacion estado);
+    // Encontrar por ID con todas las relaciones
+    @Query("SELECT c FROM Cotizacion c LEFT JOIN FETCH c.detalleCotizacion d LEFT JOIN FETCH d.producto WHERE c.idCotizacion = :id")
+    Optional<Cotizacion> findByIdWithAllRelations(@Param("id") String id);
 
-    List<Cotizacion> findByClienteDni(String dniCliente);
+    // Encontrar todas las cotizaciones básicas (sin detalles)
+    @Query("SELECT c FROM Cotizacion c LEFT JOIN FETCH c.cliente LEFT JOIN FETCH c.empleado")
+    List<Cotizacion> findAllBasic();
 
-    List<Cotizacion> findByEmpleadoDni(String dniEmpleado);
+    // Encontrar cotizaciones por cliente
+    @Query("SELECT c FROM Cotizacion c LEFT JOIN FETCH c.cliente WHERE c.cliente.dni = :dniCliente")
+    List<Cotizacion> findByClienteDni(@Param("dniCliente") String dniCliente);
 
-    List<Cotizacion> findByFechaSolicitudBetween(LocalDate startDate, LocalDate endDate);
+    // Encontrar cotizaciones por estado
+    List<Cotizacion> findByEstado(String estado);
 
-    @Query("SELECT c FROM Cotizacion c WHERE c.estado = :estado AND c.fechaSolicitud BETWEEN :startDate AND :endDate")
-    List<Cotizacion> findByEstadoAndFechaSolicitud(@Param("estado") Cotizacion.EstadoCotizacion estado, @Param("startDate") LocalDate startDate, @Param("endDate") LocalDate endDate);
+    // Encontrar cotizaciones por prioridad
+    List<Cotizacion> findByPrioridad(String prioridad);
 
+    // Contar cotizaciones por estado
     @Query("SELECT COUNT(c) FROM Cotizacion c WHERE c.estado = :estado")
-    Long countByEstado(@Param("estado") Cotizacion.EstadoCotizacion estado);
-
-    @Query("SELECT c FROM Cotizacion c JOIN FETCH c.cliente LEFT JOIN FETCH c.empleado WHERE c.idCotizacion = :id")
-    Optional<Cotizacion> findByIdWithRelations(@Param("id") String id);
+    Long countByEstado(@Param("estado") String estado);
 }

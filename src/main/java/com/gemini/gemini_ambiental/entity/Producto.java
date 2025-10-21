@@ -1,26 +1,24 @@
 package com.gemini.gemini_ambiental.entity;
 
-
 import jakarta.persistence.*;
 import jakarta.validation.constraints.*;
 import lombok.*;
 
 import java.math.BigDecimal;
-import java.util.UUID;
+import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "Producto")
-@Getter
-@Setter
+@Table(name = "producto") // <-- Cambiado a minúsculas
+@Data
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
 public class Producto {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.UUID)
-    @Column(name = "ID_producto", length = 36)
-    private String idProducto;
+    @GeneratedValue(strategy = GenerationType.UUID) // Asumiendo UUID
+    @Column(name = "id_producto", length = 36)
+    private String idProducto; // <-- Ahora es String
 
     @NotBlank(message = "El nombre es obligatorio")
     @Column(name = "nombre", length = 255, nullable = false)
@@ -39,8 +37,8 @@ public class Producto {
     @Column(name = "unidad_medida", length = 50)
     private String unidadMedida;
 
-    @ManyToOne
-    @JoinColumn(name = "ID_categoria_producto")
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "id_categoria_producto")
     private CategoriaProducto categoriaProducto;
 
     @Column(name = "lote", length = 50)
@@ -52,11 +50,14 @@ public class Producto {
     @Column(name = "observaciones", length = 500)
     private String observaciones;
 
+    @Builder.Default
     @Column(name = "fecha_creacion", updatable = false)
-    private java.time.LocalDateTime fechaCreacion = java.time.LocalDateTime.now();
+    private LocalDateTime fechaCreacion = LocalDateTime.now();
 
     @PrePersist
     protected void onCreate() {
-        this.fechaCreacion = java.time.LocalDateTime.now();
+        if (this.fechaCreacion == null) {
+            this.fechaCreacion = LocalDateTime.now();
+        }
     }
 }
