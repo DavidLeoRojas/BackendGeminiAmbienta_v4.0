@@ -62,6 +62,10 @@ public class Cotizacion {
     @Column(name = "costo_total_cotizacion", precision = 12, scale = 2, nullable = false)
     private BigDecimal costoTotalCotizacion;
 
+    // ✅ Nuevo campo para el Valor del Servicio
+    @Column(name = "valor_servicio", precision = 12, scale = 2)
+    private BigDecimal valorServicio;
+
     @Column(name = "descripcion_problema", columnDefinition = "TEXT")
     private String descripcionProblema;
 

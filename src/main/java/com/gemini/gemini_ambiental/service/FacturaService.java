@@ -218,27 +218,32 @@ public class FacturaService {
         return factura;
     }
 
+    // Método corregido para verificar stock
     private void actualizarStocks(Factura factura) {
         if (factura.getDetalleFactura() != null && !factura.getDetalleFactura().isEmpty()) {
-            // Este código se ejecutará siempre que haya productos en el detalle, sin importar el tipo de factura
             for (DetalleFactura detalle : factura.getDetalleFactura()) {
                 String idProducto = detalle.getProducto().getIdProducto();
                 Integer cantidadUsada = detalle.getCantidad();
 
-                Optional<Producto> optionalProducto = productoRepository.findById(idProducto);
-                if (optionalProducto.isEmpty()) {
-                    throw new RuntimeException("Producto no encontrado: " + idProducto);
-                }
-                Producto producto = optionalProducto.get();
-                if (producto.getStock() < cantidadUsada) {
-                    throw new RuntimeException("Stock insuficiente para el producto: " + producto.getNombre());
+                // ✅ LEER EL STOCK ACTUAL DIRECTAMENTE DE LA BASE DE DATOS EN ESTE PUNTO
+                Producto productoEnBD = productoRepository.findById(idProducto)
+                        .orElseThrow(() -> new RuntimeException("Producto no encontrado: " + idProducto));
+
+                // ✅ VERIFICAR STOCK CON EL VALOR LEÍDO DE LA BASE DE DATOS
+                if (productoEnBD.getStock() < cantidadUsada) {
+                    throw new RuntimeException("Stock insuficiente para el producto: " + productoEnBD.getNombre() + ". Stock disponible: " + productoEnBD.getStock() + ", Requerido: " + cantidadUsada);
                 }
 
-                // Actualizar stock directamente en la BD
+                // ✅ ACTUALIZAR EL STOCK EN LA BASE DE DATOS
+                // Asegúrate de que tu ProductoRepository tenga el método restarStock
                 int filasActualizadas = productoRepository.restarStock(idProducto, cantidadUsada);
                 if (filasActualizadas == 0) {
-                    throw new RuntimeException("No se pudo actualizar el stock del producto: " + idProducto + " (stock insuficiente)");
+                    // Esto podría pasar si otra transacción redujo el stock entre la lectura y la actualización
+                    throw new RuntimeException("No se pudo actualizar el stock del producto: " + idProducto + " (posible concurrencia o stock insuficiente en el momento de la actualización)");
                 }
+
+                // Opcional: Actualizar la entidad en memoria para reflejar el cambio (no es necesario si solo se guarda una vez)
+                // productoEnBD.setStock(productoEnBD.getStock() - cantidadUsada);
             }
         }
     }

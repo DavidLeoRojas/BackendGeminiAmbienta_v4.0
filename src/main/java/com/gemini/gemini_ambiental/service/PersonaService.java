@@ -170,12 +170,40 @@ public class PersonaService implements UserDetailsService {
 
     private Persona convertToEntity(PersonaDTO dto) {
         Persona persona = new Persona();
-        persona.setDni(dto.getDni());
+        // --- CORRECCIÓN PRINCIPAL: Establecer DNI según tipo de persona ---
+        String tipoPersonaStr = dto.getTipoPersona();
+        Persona.TipoPersona tipoPersonaEnum;
+        if (tipoPersonaStr == null || tipoPersonaStr.trim().isEmpty()) {
+            tipoPersonaEnum = Persona.TipoPersona.Natural;
+        } else {
+            try {
+                tipoPersonaEnum = Persona.TipoPersona.valueOf(tipoPersonaStr);
+            } catch (IllegalArgumentException e) {
+                tipoPersonaEnum = Persona.TipoPersona.Natural; // Valor por defecto
+            }
+        }
+
+        if (tipoPersonaEnum == Persona.TipoPersona.Juridica) {
+            // Para persona jurídica, el DNI debe ser el NIT (según el trigger de la BD)
+            String nit = dto.getNit();
+            if (nit != null && !nit.trim().isEmpty()) {
+                persona.setDni(nit.trim()); // ✅ Asignar NIT al DNI
+            } else {
+                // Opcional: Lanzar una excepción si NIT es obligatorio para jurídicas
+                // throw new IllegalArgumentException("El NIT es obligatorio para personas jurídicas.");
+                // O asignar un valor temporal o vacío si la validación la hará el trigger
+                persona.setDni(null); // O un valor por defecto si es necesario
+            }
+        } else {
+            // Para persona natural, usar el DNI enviado por el frontend
+            persona.setDni(dto.getDni());
+        }
+        // --- FIN CORRECCIÓN ---
 
         // --- CORRECCIÓN: Manejar tipoDni nulo o vacío ---
         String tipoDni = dto.getTipoDni();
         if (tipoDni == null || tipoDni.trim().isEmpty()) {
-            persona.setTipoDni("CC");
+            persona.setTipoDni("CC"); // O el valor por defecto que desees
         } else {
             persona.setTipoDni(tipoDni);
         }
@@ -187,19 +215,18 @@ public class PersonaService implements UserDetailsService {
         persona.setRol(dto.getRol());
 
         // Asegúrate de manejar tipoPersona de la misma manera si aplica
-        String tipoPersonaStr = dto.getTipoPersona();
-        if (tipoPersonaStr == null || tipoPersonaStr.trim().isEmpty()) {
-            persona.setTipoPersona(Persona.TipoPersona.Natural);
+        persona.setTipoPersona(tipoPersonaEnum);
+
+        // Importante: Solo asignar NIT y Representante Legal si es Jurídica
+        if (tipoPersonaEnum == Persona.TipoPersona.Juridica) {
+            persona.setNit(dto.getNit()); // Este valor también se usa para el DNI
+            persona.setRepresentanteLegal(dto.getRepresentanteLegal());
         } else {
-            try {
-                persona.setTipoPersona(Persona.TipoPersona.valueOf(tipoPersonaStr));
-            } catch (IllegalArgumentException e) {
-                persona.setTipoPersona(Persona.TipoPersona.Natural);
-            }
+            // Para naturales, asegurar que estos campos sean null
+            persona.setNit(null);
+            persona.setRepresentanteLegal(null);
         }
 
-        persona.setRepresentanteLegal(dto.getRepresentanteLegal());
-        persona.setNit(dto.getNit());
 
         if (dto.getIdDireccion() != null) {
             Direccion direccion = direccionRepository.findById(dto.getIdDireccion())

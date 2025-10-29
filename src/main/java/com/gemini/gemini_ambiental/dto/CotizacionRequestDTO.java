@@ -15,6 +15,7 @@ public class CotizacionRequestDTO {
     private LocalDate fechaPreferida;
     private String prioridad;
     private BigDecimal costoTotalCotizacion;
+    private BigDecimal valorServicio;
     private String descripcionProblema;
     private String notasInternas;
     private String estado;

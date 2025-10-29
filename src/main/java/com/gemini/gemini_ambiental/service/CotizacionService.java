@@ -55,6 +55,12 @@ public class CotizacionService {
         // Actualizar detalles si se proporcionan
         if (requestDTO.getDetalleCotizacion() != null) {
             updateDetallesCotizacion(existingCotizacion, requestDTO.getDetalleCotizacion());
+            // ✅ CORRECCIÓN: ASEGURARSE DE ASIGNAR EL COSTO TOTAL ENVIADO DESPUÉS DE ACTUALIZAR DETALLES
+            // Siempre usar el valor enviado por el frontend, incluso si se actualizan los detalles
+            if (requestDTO.getCostoTotalCotizacion() != null) {
+                existingCotizacion.setCostoTotalCotizacion(requestDTO.getCostoTotalCotizacion());
+            }
+            // El valorServicio ya se actualizó en updateCotizacionFromRequest si estaba en el DTO
         } else if (requestDTO.getCostoTotalCotizacion() != null) {
             existingCotizacion.setCostoTotalCotizacion(requestDTO.getCostoTotalCotizacion());
         }
@@ -82,6 +88,10 @@ public class CotizacionService {
         existingCotizacion.setDescripcionProblema(cotizacionDTO.getDescripcionProblema());
         existingCotizacion.setNotasInternas(cotizacionDTO.getNotasInternas());
         existingCotizacion.setCostoTotalCotizacion(cotizacionDTO.getCostoTotalCotizacion());
+        // ✅ Actualizar el Valor del Servicio si se proporciona en el DTO antiguo
+        if (cotizacionDTO.getValorServicio() != null) {
+            existingCotizacion.setValorServicio(cotizacionDTO.getValorServicio());
+        }
 
         Cotizacion updatedCotizacion = cotizacionRepository.save(existingCotizacion);
         return convertToDTO(updatedCotizacion);
@@ -198,6 +208,9 @@ public class CotizacionService {
         cotizacion.setDescripcionProblema(requestDTO.getDescripcionProblema());
         cotizacion.setNotasInternas(requestDTO.getNotasInternas());
 
+        // ✅ Asignar el Valor del Servicio desde el DTO
+        cotizacion.setValorServicio(requestDTO.getValorServicio() != null ? requestDTO.getValorServicio() : BigDecimal.ZERO);
+
         // ✅ CORRECCIÓN: Inicializar la lista de detalles
         cotizacion.setDetalleCotizacion(new ArrayList<>());
 
@@ -216,21 +229,18 @@ public class CotizacionService {
 
                 cotizacion.getDetalleCotizacion().add(detalle);
             }
-
-            // Calcular costo total automáticamente desde los detalles
-            BigDecimal costoTotal = cotizacion.getDetalleCotizacion().stream()
-                    .map(detalle -> detalle.getPrecioUnitario().multiply(BigDecimal.valueOf(detalle.getCantidad())))
-                    .reduce(BigDecimal.ZERO, BigDecimal::add);
-            cotizacion.setCostoTotalCotizacion(costoTotal);
-        } else {
-            // Si no hay detalles, usar el costo total proporcionado
-            cotizacion.setCostoTotalCotizacion(requestDTO.getCostoTotalCotizacion() != null ?
-                    requestDTO.getCostoTotalCotizacion() : BigDecimal.ZERO);
+            // ❌ ELIMINAR ESTA RECALCULACIÓN COMPLETAMENTE
+            // NO HAY NINGUNA LÍNEA AQUÍ QUE RECALCULE cotizacion.setCostoTotalCotizacion(...)
+            // El costoTotalCotizacion se asignará más abajo usando el valor enviado.
         }
+
+        // ✅ CORRECCIÓN: SIEMPRE USAR EL COSTO TOTAL ENVIADO DESDE EL FRONTEND
+        // No importa si hay o no productos, siempre usamos el valor que nos envía el frontend.
+        cotizacion.setCostoTotalCotizacion(requestDTO.getCostoTotalCotizacion() != null ?
+                requestDTO.getCostoTotalCotizacion() : BigDecimal.ZERO);
 
         return cotizacion;
     }
-
     private void updateCotizacionFromRequest(Cotizacion cotizacion, CotizacionRequestDTO requestDTO) {
         if (requestDTO.getEstado() != null) {
             cotizacion.setEstado(requestDTO.getEstado());
@@ -246,6 +256,10 @@ public class CotizacionService {
         }
         if (requestDTO.getNotasInternas() != null) {
             cotizacion.setNotasInternas(requestDTO.getNotasInternas());
+        }
+        // ✅ Actualizar el Valor del Servicio si se proporciona
+        if (requestDTO.getValorServicio() != null) {
+            cotizacion.setValorServicio(requestDTO.getValorServicio());
         }
     }
 
@@ -268,11 +282,9 @@ public class CotizacionService {
             cotizacion.getDetalleCotizacion().add(detalle);
         }
 
-        // Recalcular costo total
-        BigDecimal costoTotal = cotizacion.getDetalleCotizacion().stream()
-                .map(detalle -> detalle.getPrecioUnitario().multiply(BigDecimal.valueOf(detalle.getCantidad())))
-                .reduce(BigDecimal.ZERO, BigDecimal::add);
-        cotizacion.setCostoTotalCotizacion(costoTotal);
+        // ❌ ASEGURARSE DE QUE ESTA RECALCULACIÓN SIGA SIENDO ELIMINADA
+        // NO HAY NINGUNA LÍNEA AQUÍ QUE RECALCULE cotizacion.setCostoTotalCotizacion(...)
+        // El costoTotalCotizacion se actualizará en updateCotizacionWithProducts o se mantendrá si no se envía explícitamente.
     }
 
     private Cotizacion convertToEntity(CotizacionDTO dto) {
@@ -286,6 +298,10 @@ public class CotizacionService {
         cotizacion.setDescripcionProblema(dto.getDescripcionProblema());
         cotizacion.setNotasInternas(dto.getNotasInternas());
         cotizacion.setCostoTotalCotizacion(dto.getCostoTotalCotizacion());
+        // ✅ Asignar el Valor del Servicio si está en el DTO
+        if (dto.getValorServicio() != null) {
+            cotizacion.setValorServicio(dto.getValorServicio());
+        }
 
         if (dto.getDniCliente() != null) {
             Persona cliente = personaRepository.findByDni(dto.getDniCliente())
@@ -315,6 +331,8 @@ public class CotizacionService {
         dto.setDescripcionProblema(cotizacion.getDescripcionProblema());
         dto.setNotasInternas(cotizacion.getNotasInternas());
         dto.setCostoTotalCotizacion(cotizacion.getCostoTotalCotizacion());
+        // ✅ Mapear el Valor del Servicio
+        dto.setValorServicio(cotizacion.getValorServicio());
         dto.setFechaCreacion(cotizacion.getFechaCreacion());
 
         // Información del cliente
@@ -365,6 +383,8 @@ public class CotizacionService {
         dto.setDescripcionProblema(cotizacion.getDescripcionProblema());
         dto.setNotasInternas(cotizacion.getNotasInternas());
         dto.setCostoTotalCotizacion(cotizacion.getCostoTotalCotizacion());
+        // ✅ Mapear el Valor del Servicio
+        dto.setValorServicio(cotizacion.getValorServicio());
         dto.setFechaCreacion(cotizacion.getFechaCreacion());
 
         if (cotizacion.getCliente() != null) {
