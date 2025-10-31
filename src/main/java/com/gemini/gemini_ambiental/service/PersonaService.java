@@ -45,10 +45,14 @@ public class PersonaService implements UserDetailsService {
         Persona persona = personaRepository.findByCorreo(email)
                 .orElseThrow(() -> new UsernameNotFoundException("Usuario no encontrado con correo: " + email));
 
+        if (!"Empleado".equals(persona.getRol())) {
+            throw new UsernameNotFoundException("Acceso denegado: Solo los empleados pueden iniciar sesión.");
+        }
+
         return User.builder()
                 .username(persona.getCorreo())
-                .password(persona.getPassword()) // La contraseña debe estar hasheada
-                .authorities("USER") // Puedes personalizar los roles aquí si es necesario
+                .password(persona.getPassword())
+                .authorities("ROLE_EMPLEADO") // ✅ CORRECTO: en mayúsculas
                 .build();
     }
 

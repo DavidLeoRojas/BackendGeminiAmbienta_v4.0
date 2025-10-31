@@ -14,12 +14,16 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.web.cors.CorsConfiguration;
+import org.springframework.web.cors.CorsConfigurationSource;
+import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
+
+import java.util.Arrays;
 
 @Configuration
 @EnableWebSecurity
 public class WebSecurityConfig {
 
-    // ✅ Inyectar JwtRequestFilter SIN @Lazy, ya que la dependencia circular se rompe en PersonaService
     @Autowired
     private JwtRequestFilter jwtRequestFilter;
 
@@ -35,7 +39,7 @@ public class WebSecurityConfig {
     public DaoAuthenticationProvider authenticationProvider() {
         DaoAuthenticationProvider authProvider = new DaoAuthenticationProvider();
         authProvider.setUserDetailsService(userDetailsService);
-        authProvider.setPasswordEncoder(passwordEncoder()); // Usa el bean aquí, pero se inyecta perezosamente en PersonaService
+        authProvider.setPasswordEncoder(passwordEncoder());
         return authProvider;
     }
 
@@ -46,21 +50,40 @@ public class WebSecurityConfig {
 
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
+        // ✅ 1. Configurar CORS
+        http.cors(cors -> cors.configurationSource(corsConfigurationSource()));
+
         http.csrf(csrf -> csrf.disable())
                 .sessionManagement(session -> session
                         .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
                 )
                 .authorizeHttpRequests(authz -> authz
-                        .anyRequest().permitAll()
-                       //.requestMatchers("/api/auth/login", "/login", "/authenticate").permitAll()
-                        //.anyRequest().authenticated()
+                        // ✅ 2. Permitir acceso público solo al login
+                        .requestMatchers("/api/auth/login", "/login", "/authenticate").permitAll()
+                        // ✅ 3. Proteger TODOS los demás endpoints
+                        .anyRequest().authenticated()
                 );
 
         http.authenticationProvider(authenticationProvider());
-
-        // Añadir el filtro JWT ANTES del filtro de autenticación por usuario/contraseña
         http.addFilterBefore(jwtRequestFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
+    }
+
+    // ✅ 4. Bean para la configuración de CORS
+    @Bean
+    public CorsConfigurationSource corsConfigurationSource() {
+        CorsConfiguration configuration = new CorsConfiguration();
+        // Permite solicitudes desde tu frontend HTML (que se sirve como file:// o desde un servidor local)
+        configuration.setAllowedOriginPatterns(Arrays.asList("*"));
+        configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));
+        configuration.setAllowedHeaders(Arrays.asList("*"));
+        // Si tu JWT se envía en el header 'Authorization', esto es necesario
+        configuration.setExposedHeaders(Arrays.asList("Authorization"));
+        configuration.setAllowCredentials(false); // Puedes poner true si usas cookies, pero con JWT suele ser false
+
+        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+        source.registerCorsConfiguration("/**", configuration);
+        return source;
     }
 }
