@@ -58,9 +58,8 @@ public class WebSecurityConfig {
                         .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
                 )
                 .authorizeHttpRequests(authz -> authz
-                        // ✅ 2. Permitir acceso público solo al login
                         .requestMatchers("/api/auth/login", "/login", "/authenticate").permitAll()
-                        // ✅ 3. Proteger TODOS los demás endpoints
+                        .requestMatchers(org.springframework.http.HttpMethod.OPTIONS, "/**").permitAll() // ✅ Permitir preflight
                         .anyRequest().authenticated()
                 );
 
@@ -75,25 +74,22 @@ public class WebSecurityConfig {
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
 
-        // ✅ Permitir origenes específicos
-        configuration.setAllowedOrigins(Arrays.asList(
-                "https://davidleorojas.github.io",
-                "http://localhost:5500",
-                "http://127.0.0.1:5500"
+        // ✅ Agregar tu dominio GitHub Pages
+        configuration.setAllowedOriginPatterns(Arrays.asList(
+                "https://*.github.io",
+                "https://*.githubusercontent.com",
+                "*"
         ));
 
-        // ✅ Métodos permitidos
         configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));
-
         configuration.setAllowedHeaders(Arrays.asList("*"));
         configuration.setExposedHeaders(Arrays.asList("Authorization"));
-
-        // ✅ IMPORTANTE PARA JWT DESDE GITHUB PAGES
-        configuration.setAllowCredentials(true);
+        configuration.setAllowCredentials(false);
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", configuration);
         return source;
     }
+
 
 }
