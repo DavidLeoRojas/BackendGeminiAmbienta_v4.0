@@ -16,7 +16,8 @@ public class CorsConfig {
             @Override
             public void addCorsMappings(CorsRegistry registry) {
                 registry.addMapping("/**")
-                        .allowedOrigins("*") // Permite todas las origines (para desarrollo)
+                        .allowedOrigins("http://localhost:5500", "http://127.0.0.1:5500") // o el puerto donde sirves tu HTML
+                        //.allowedOrigins("*") // Permite todas las origines (para desarrollo)
                         .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS")
                         .allowedHeaders("*")
                         .allowCredentials(false); // Si necesitas cookies o autenticación, cambia a true

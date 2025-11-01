@@ -74,16 +74,26 @@ public class WebSecurityConfig {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
-        // Permite solicitudes desde tu frontend HTML (que se sirve como file:// o desde un servidor local)
-        configuration.setAllowedOriginPatterns(Arrays.asList("*"));
+
+        // ✅ Permitir origenes específicos
+        configuration.setAllowedOrigins(Arrays.asList(
+                "https://davidleorojas.github.io",
+                "http://localhost:5500",
+                "http://127.0.0.1:5500"
+        ));
+
+        // ✅ Métodos permitidos
         configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));
+
         configuration.setAllowedHeaders(Arrays.asList("*"));
-        // Si tu JWT se envía en el header 'Authorization', esto es necesario
         configuration.setExposedHeaders(Arrays.asList("Authorization"));
-        configuration.setAllowCredentials(false); // Puedes poner true si usas cookies, pero con JWT suele ser false
+
+        // ✅ IMPORTANTE PARA JWT DESDE GITHUB PAGES
+        configuration.setAllowCredentials(true);
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", configuration);
         return source;
     }
+
 }
