@@ -45,14 +45,16 @@ public class PersonaService implements UserDetailsService {
         Persona persona = personaRepository.findByCorreo(email)
                 .orElseThrow(() -> new UsernameNotFoundException("Usuario no encontrado con correo: " + email));
 
+        // ✅ VALIDACIÓN CLAVE: Solo permitir login a empleados
         if (!"Empleado".equals(persona.getRol())) {
             throw new UsernameNotFoundException("Acceso denegado: Solo los empleados pueden iniciar sesión.");
         }
 
+        // ✅ Asignar el rol correcto para que Spring Security lo reconozca
         return User.builder()
                 .username(persona.getCorreo())
-                .password(persona.getPassword())
-                .authorities("ROLE_EMPLEADO") // ✅ CORRECTO: en mayúsculas
+                .password(persona.getPassword()) // La contraseña debe estar hasheada
+                .authorities("ROLE_Empleado") // <-- Rol específico
                 .build();
     }
 

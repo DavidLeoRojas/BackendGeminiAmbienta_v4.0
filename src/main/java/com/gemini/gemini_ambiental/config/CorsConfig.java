@@ -16,11 +16,14 @@ public class CorsConfig {
             @Override
             public void addCorsMappings(CorsRegistry registry) {
                 registry.addMapping("/**")
-                        .allowedOrigins("http://localhost:5500", "http://127.0.0.1:5500") // o el puerto donde sirves tu HTML
-                        //.allowedOrigins("*") // Permite todas las origines (para desarrollo)
+                        .allowedOrigins(
+                                "http://localhost:5500",
+                                "http://127.0.0.1:5500",
+                                "https://david-gemini.github.io"  // 👈 Reemplaza esto con tu URL real de GitHub Pages si es diferente
+                        )
                         .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS")
                         .allowedHeaders("*")
-                        .allowCredentials(false); // Si necesitas cookies o autenticación, cambia a true
+                        .allowCredentials(false); // Mantén false si no usas cookies ni autenticación basada en credenciales
             }
         };
     }
