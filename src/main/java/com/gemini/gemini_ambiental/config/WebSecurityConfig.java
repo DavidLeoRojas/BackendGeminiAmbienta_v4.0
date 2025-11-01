@@ -74,11 +74,10 @@ public class WebSecurityConfig {
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
 
-        // 👇 ESPECIFICA EXACTAMENTE TU ORIGEN DE GITHUB PAGES
         configuration.setAllowedOrigins(Arrays.asList(
                 "http://localhost:5500",
                 "http://127.0.0.1:5500",
-                "https://david-gemini.github.io"  // ⚠️ Reemplaza con tu URL real
+                "https://davidleorojas.github.io"  // ✅ Solo el dominio, sin ruta, sin espacios
         ));
 
         configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));
