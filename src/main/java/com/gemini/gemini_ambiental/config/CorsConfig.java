@@ -1,4 +1,4 @@
-// src/main/java/com/gemini/gemini_ambiental/config/CorsConfig.java
+// src/main/java/com/gememini/gemini_ambiental/config/CorsConfig.java
 
 package com.gemini.gemini_ambiental.config;
 
@@ -19,11 +19,11 @@ public class CorsConfig {
                         .allowedOrigins(
                                 "http://localhost:5500",
                                 "http://127.0.0.1:5500",
-                                "https://david-gemini.github.io"  // 👈 Reemplaza esto con tu URL real de GitHub Pages si es diferente
+                                "https://davidleorojas.github.io"  // ✅ Nombre de usuario CORRECTO, sin espacios
                         )
                         .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS")
                         .allowedHeaders("*")
-                        .allowCredentials(false); // Mantén false si no usas cookies ni autenticación basada en credenciales
+                        .allowCredentials(false);
             }
         };
     }
