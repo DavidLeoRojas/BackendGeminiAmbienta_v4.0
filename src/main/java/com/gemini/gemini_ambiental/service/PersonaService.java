@@ -256,14 +256,16 @@ public class PersonaService implements UserDetailsService {
         dto.setNit(persona.getNit());
         dto.setFechaCreacion(persona.getFechaCreacion());
 
+        // ✅ CORRECCIÓN PRINCIPAL: Convertir UUID → String
         if (persona.getDireccion() != null) {
-            dto.setIdDireccion(persona.getDireccion().getIdDireccion().toString()); // ✅
+            dto.setIdDireccion(persona.getDireccion().getIdDireccion().toString());
             dto.setNombreDireccion(persona.getDireccion().getNombre());
         }
         if (persona.getCargoEspecialidad() != null) {
-            dto.setIdCargoEspecialidad(persona.getCargoEspecialidad().getIdCargoEspecialidad().toString()); // ✅
+            dto.setIdCargoEspecialidad(persona.getCargoEspecialidad().getIdCargoEspecialidad().toString());
             dto.setNombreCargo(persona.getCargoEspecialidad().getNombre());
         }
+
         return dto;
     }
 }
