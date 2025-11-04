@@ -7,11 +7,11 @@ import lombok.*;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.util.List;
 import java.util.ArrayList;
+import java.util.List;
 
 @Entity
-@Table(name = "Factura")
+@Table(name = "factura")
 @Getter
 @Setter
 @NoArgsConstructor
@@ -21,11 +21,11 @@ public class Factura {
 
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
-    @Column(name = "ID_factura", length = 36)
+    @Column(name = "id_factura", length = 36)
     private String idFactura;
 
     @ManyToOne
-    @JoinColumn(name = "DNI_cliente", nullable = false)
+    @JoinColumn(name = "dni_cliente", nullable = false)
     private Persona cliente;
 
     @NotNull(message = "La fecha de emisión es obligatoria")
@@ -38,24 +38,32 @@ public class Factura {
     private BigDecimal montoTotal;
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "estado", nullable = false)
-    private EstadoFactura estado = EstadoFactura.Pendiente;
+    @Column(name = "estado", nullable = false, length = 20)
+    @Builder.Default
+    private EstadoFactura estado = EstadoFactura.PENDIENTE;
 
-    @Column(name = "observaciones", length = 500)
+    @Column(name = "observaciones", columnDefinition = "TEXT")
     private String observaciones;
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "tipo_factura")
+    @Column(name = "tipo_factura", nullable = false, length = 20)
+    @Builder.Default
     private TipoFactura tipoFactura = TipoFactura.Simple;
 
     @ManyToOne
-    @JoinColumn(name = "ID_cotizacion")
+    @JoinColumn(name = "id_cotizacion")
     private Cotizacion cotizacion;
 
     @OneToMany(mappedBy = "factura", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
-    private List<DetalleFactura> detalleFactura = new ArrayList<>();
+    @Builder.Default
+    private List<DetalleFactura> detalleServicios = new ArrayList<>();
+
+    @OneToMany(mappedBy = "factura", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
+    @Builder.Default
+    private List<DetalleFacturaProducto> detalleProductos = new ArrayList<>();
 
     @Column(name = "fecha_creacion", updatable = false)
+    @Builder.Default
     private LocalDateTime fechaCreacion = LocalDateTime.now();
 
     @Column(name = "valor_servicio", precision = 12, scale = 2)
@@ -66,26 +74,18 @@ public class Factura {
         this.fechaCreacion = LocalDateTime.now();
     }
 
-    public void addDetalleFactura(DetalleFactura detalle) {
-        detalleFactura.add(detalle);
+    public void addDetalleServicio(DetalleFactura detalle) {
+        detalleServicios.add(detalle);
         detalle.setFactura(this);
     }
 
-    public void removeDetalleFactura(DetalleFactura detalle) {
-        detalleFactura.remove(detalle);
-        detalle.setFactura(null);
-    }
-
-    public BigDecimal getValorServicio() {
-        return valorServicio;
-    }
-
-    public void setValorServicio(BigDecimal valorServicio) {
-        this.valorServicio = valorServicio;
+    public void addDetalleProducto(DetalleFacturaProducto detalle) {
+        detalleProductos.add(detalle);
+        detalle.setFactura(this);
     }
 
     public enum EstadoFactura {
-        Pendiente, Pagada, Vencida, Rechazada
+        PENDIENTE, PAGADA, VENCIDA, RECHAZADA
     }
 
     public enum TipoFactura {

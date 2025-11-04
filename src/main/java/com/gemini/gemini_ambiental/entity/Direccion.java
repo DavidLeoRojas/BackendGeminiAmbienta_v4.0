@@ -1,15 +1,11 @@
 package com.gemini.gemini_ambiental.entity;
 
-
-
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotBlank;
 import lombok.*;
 
-import java.util.UUID;
-
 @Entity
-@Table(name = "Direccion")
+@Table(name = "direccion")
 @Getter
 @Setter
 @NoArgsConstructor
@@ -19,7 +15,7 @@ public class Direccion {
 
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
-    @Column(name = "ID_direccion", length = 36)
+    @Column(name = "id_direccion", length = 36)
     private String idDireccion;
 
     @NotBlank(message = "El nombre es obligatorio")
@@ -34,6 +30,7 @@ public class Direccion {
     private Direccion dependeDe;
 
     @Column(name = "fecha_creacion", updatable = false)
+    @Builder.Default
     private java.time.LocalDateTime fechaCreacion = java.time.LocalDateTime.now();
 
     @PrePersist

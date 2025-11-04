@@ -8,17 +8,18 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "producto") // <-- Cambiado a minúsculas
-@Data
+@Table(name = "producto")
+@Getter
+@Setter
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
 public class Producto {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.UUID) // Asumiendo UUID
+    @GeneratedValue(strategy = GenerationType.UUID)
     @Column(name = "id_producto", length = 36)
-    private String idProducto; // <-- Ahora es String
+    private String idProducto;
 
     @NotBlank(message = "El nombre es obligatorio")
     @Column(name = "nombre", length = 255, nullable = false)
@@ -47,11 +48,11 @@ public class Producto {
     @Column(name = "proveedor", length = 255)
     private String proveedor;
 
-    @Column(name = "observaciones", length = 500)
+    @Column(name = "observaciones", columnDefinition = "TEXT")
     private String observaciones;
 
-    @Builder.Default
     @Column(name = "fecha_creacion", updatable = false)
+    @Builder.Default
     private LocalDateTime fechaCreacion = LocalDateTime.now();
 
     @PrePersist

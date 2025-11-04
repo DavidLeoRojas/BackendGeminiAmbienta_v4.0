@@ -9,7 +9,7 @@ import lombok.*;
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "Persona")
+@Table(name = "persona")
 @Getter
 @Setter
 @NoArgsConstructor
@@ -18,8 +18,8 @@ import java.time.LocalDateTime;
 public class Persona {
 
     @Id
-    @Column(name = "DNI", length = 20)
-    private String dni; // ← Clave primaria
+    @Column(name = "dni", length = 20)
+    private String dni;
 
     @NotBlank(message = "El tipo de documento es obligatorio")
     @Column(name = "tipo_dni", length = 50, nullable = false)
@@ -42,7 +42,8 @@ public class Persona {
     private String rol;
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "tipo_persona", length = 50, nullable = false)
+    @Column(name = "tipo_persona", length = 10, nullable = false)
+    @Builder.Default
     private TipoPersona tipoPersona = TipoPersona.Natural;
 
     @Column(name = "representante_legal", length = 20)
@@ -51,18 +52,19 @@ public class Persona {
     @Column(name = "nit", length = 20)
     private String nit;
 
-    @Column(name = "password", length = 255) // 🔐
+    @Column(name = "password", length = 255)
     private String password;
 
     @ManyToOne
-    @JoinColumn(name = "ID_direccion")
+    @JoinColumn(name = "id_direccion")
     private Direccion direccion;
 
     @ManyToOne
-    @JoinColumn(name = "ID_cargo_especialidad")
+    @JoinColumn(name = "id_cargo_especialidad")
     private CargoEspecialidad cargoEspecialidad;
 
     @Column(name = "fecha_creacion", updatable = false)
+    @Builder.Default
     private LocalDateTime fechaCreacion = LocalDateTime.now();
 
     @PrePersist

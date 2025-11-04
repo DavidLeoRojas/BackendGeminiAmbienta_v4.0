@@ -52,19 +52,14 @@ public class ServicioService {
     public ServicioDTO createServicio(ServicioDTO servicioDTO) {
         Servicio servicio = new Servicio();
 
-        // No asignar idServicio aquí, JPA lo generará automáticamente
-        // servicio.setIdServicio(UUID.randomUUID().toString()); // <-- REMOVIDO
-
-        // Asignar otros campos desde el DTO
         servicio.setFecha(servicioDTO.getFecha());
         servicio.setHora(servicioDTO.getHora());
-        servicio.setEstado(mapStringToEstado(servicioDTO.getEstado())); // Convertir String a Enum
+        servicio.setEstado(mapStringToEstado(servicioDTO.getEstado()));
         servicio.setObservaciones(servicioDTO.getObservaciones());
         servicio.setPrioridad(servicioDTO.getPrioridad());
         servicio.setDuracionEstimada(servicioDTO.getDuracionEstimada());
         servicio.setServicioSinCotizacion(servicioDTO.getServicioSinCotizacion());
 
-        // Buscar y asignar entidades relacionadas
         if (servicioDTO.getIdCotizacion() != null) {
             Cotizacion cotizacion = cotizacionRepository.findById(servicioDTO.getIdCotizacion())
                     .orElseThrow(() -> new RuntimeException("Cotización no encontrada con ID: " + servicioDTO.getIdCotizacion()));
@@ -90,28 +85,26 @@ public class ServicioService {
         }
 
         Servicio savedServicio = servicioRepository.save(servicio);
-        return convertToDTO(savedServicio); // El DTO ahora contendrá el ID generado por JPA
+        return convertToDTO(savedServicio);
     }
 
     public ServicioDTO updateServicio(String id, ServicioDTO servicioDTO) {
         Servicio servicio = servicioRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Servicio no encontrado con ID: " + id));
 
-        // Actualizar campos básicos
         servicio.setFecha(servicioDTO.getFecha());
         servicio.setHora(servicioDTO.getHora());
-        servicio.setEstado(mapStringToEstado(servicioDTO.getEstado())); // Convertir String a Enum
+        servicio.setEstado(mapStringToEstado(servicioDTO.getEstado()));
         servicio.setObservaciones(servicioDTO.getObservaciones());
         servicio.setPrioridad(servicioDTO.getPrioridad());
         servicio.setDuracionEstimada(servicioDTO.getDuracionEstimada());
 
-        // Actualizar entidades relacionadas
         if (servicioDTO.getIdCotizacion() != null) {
             Cotizacion cotizacion = cotizacionRepository.findById(servicioDTO.getIdCotizacion())
                     .orElseThrow(() -> new RuntimeException("Cotización no encontrada con ID: " + servicioDTO.getIdCotizacion()));
             servicio.setCotizacion(cotizacion);
         } else {
-            servicio.setCotizacion(null); // Si el ID es null, desvincular
+            servicio.setCotizacion(null);
         }
 
         if (servicioDTO.getDniCliente() != null) {
@@ -119,7 +112,7 @@ public class ServicioService {
                     .orElseThrow(() -> new RuntimeException("Cliente no encontrado con DNI: " + servicioDTO.getDniCliente()));
             servicio.setCliente(cliente);
         } else {
-            servicio.setCliente(null); // Si el DNI es null, desvincular
+            servicio.setCliente(null);
         }
 
         if (servicioDTO.getDniEmpleadoAsignado() != null) {
@@ -127,7 +120,7 @@ public class ServicioService {
                     .orElseThrow(() -> new RuntimeException("Técnico no encontrado con DNI: " + servicioDTO.getDniEmpleadoAsignado()));
             servicio.setEmpleadoAsignado(tecnico);
         } else {
-            servicio.setEmpleadoAsignado(null); // Si el DNI es null, desvincular
+            servicio.setEmpleadoAsignado(null);
         }
 
         if (servicioDTO.getIdTipoServicio() != null) {
@@ -135,7 +128,7 @@ public class ServicioService {
                     .orElseThrow(() -> new RuntimeException("Tipo de Servicio no encontrado con ID: " + servicioDTO.getIdTipoServicio()));
             servicio.setTipoServicio(tipoServ);
         } else {
-            servicio.setTipoServicio(null); // Si el ID es null, desvincular
+            servicio.setTipoServicio(null);
         }
 
         Servicio updatedServicio = servicioRepository.save(servicio);
@@ -149,31 +142,32 @@ public class ServicioService {
         servicioRepository.deleteById(id);
     }
 
+    /**
+     * Convierte un String (ej: "PROGRAMADO") al enum correspondiente.
+     * Es tolerante a mayúsculas/minúsculas y nulos.
+     */
     private Servicio.EstadoServicio mapStringToEstado(String estadoStr) {
-        if (estadoStr == null) {
-            return Servicio.EstadoServicio.Programado; // Valor por defecto
+        if (estadoStr == null || estadoStr.trim().isEmpty()) {
+            return Servicio.EstadoServicio.PROGRAMADO;
         }
-        // Reemplazar guiones bajos por espacios para revertir el cambio del frontend
-        String estadoNormalizado = estadoStr.replace('_', ' ');
         try {
-            return Servicio.EstadoServicio.valueOf(estadoNormalizado);
+            return Servicio.EstadoServicio.valueOf(estadoStr.trim().toUpperCase());
         } catch (IllegalArgumentException e) {
-            // Si no coincide con ningún valor del enum, usar uno por defecto o lanzar error
-            System.err.println("Estado desconocido: " + estadoStr + ", usando Programado por defecto.");
-            return Servicio.EstadoServicio.Programado;
+            System.err.println("Estado de servicio desconocido: '" + estadoStr + "'. Usando PROGRAMADO por defecto.");
+            return Servicio.EstadoServicio.PROGRAMADO;
         }
     }
 
     private ServicioDTO convertToDTO(Servicio servicio) {
         ServicioDTO dto = new ServicioDTO();
-        dto.setIdServicio(servicio.getIdServicio()); // JPA ya asignó el ID
+        dto.setIdServicio(servicio.getIdServicio());
         dto.setIdCotizacion(servicio.getCotizacion() != null ? servicio.getCotizacion().getIdCotizacion() : null);
         dto.setDniCliente(servicio.getCliente() != null ? servicio.getCliente().getDni() : null);
         dto.setDniEmpleadoAsignado(servicio.getEmpleadoAsignado() != null ? servicio.getEmpleadoAsignado().getDni() : null);
         dto.setIdTipoServicio(servicio.getTipoServicio() != null ? servicio.getTipoServicio().getIdTipoServicio() : null);
         dto.setFecha(servicio.getFecha());
         dto.setHora(servicio.getHora());
-        dto.setEstado(servicio.getEstado().toString()); // Convertir Enum a String para el DTO
+        dto.setEstado(servicio.getEstado().name()); // ✅ Usa .name() para devolver "PROGRAMADO", no "Programado"
         dto.setObservaciones(servicio.getObservaciones());
         dto.setPrioridad(servicio.getPrioridad());
         dto.setDuracionEstimada(servicio.getDuracionEstimada());

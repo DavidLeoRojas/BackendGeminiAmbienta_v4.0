@@ -10,6 +10,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -41,14 +42,12 @@ public class FacturaService {
         Factura existingFactura = facturaRepository.findByIdWithRelations(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Factura no encontrada con ID: " + id));
 
-        // Actualizar cliente
         if (facturaDTO.getDniCliente() != null) {
             Persona cliente = personaRepository.findByDni(facturaDTO.getDniCliente())
                     .orElseThrow(() -> new ResourceNotFoundException("Cliente no encontrado con DNI: " + facturaDTO.getDniCliente()));
             existingFactura.setCliente(cliente);
         }
 
-        // Actualizar cotización si aplica
         if ("ConCotizacion".equals(facturaDTO.getTipoFactura()) && facturaDTO.getIdCotizacion() != null) {
             Cotizacion cotizacion = cotizacionRepository.findById(facturaDTO.getIdCotizacion())
                     .orElseThrow(() -> new ResourceNotFoundException("Cotización no encontrada con ID: " + facturaDTO.getIdCotizacion()));
@@ -57,34 +56,31 @@ public class FacturaService {
             existingFactura.setCotizacion(null);
         }
 
-        // Actualizar otros campos
         existingFactura.setFechaEmision(facturaDTO.getFechaEmision());
         existingFactura.setMontoTotal(facturaDTO.getMontoTotal());
         existingFactura.setEstado(Factura.EstadoFactura.valueOf(facturaDTO.getEstado()));
         existingFactura.setObservaciones(facturaDTO.getObservaciones());
         existingFactura.setTipoFactura(Factura.TipoFactura.valueOf(facturaDTO.getTipoFactura()));
 
-        // --- Manejar DetalleFactura ---
-        existingFactura.getDetalleFactura().clear();
+        // Limpiar productos anteriores
+        existingFactura.getDetalleProductos().clear();
 
         if (facturaDTO.getDetalleFactura() != null && !facturaDTO.getDetalleFactura().isEmpty()) {
             for (FacturaDTO.DetalleFacturaDTO dtoDetalle : facturaDTO.getDetalleFactura()) {
                 Producto producto = productoRepository.findById(dtoDetalle.getIdProducto())
                         .orElseThrow(() -> new ResourceNotFoundException("Producto no encontrado con ID: " + dtoDetalle.getIdProducto()));
 
-                // ✅ Calcular precios desde el producto
                 BigDecimal precioUnitario = producto.getPrecioActual();
                 Integer cantidad = dtoDetalle.getCantidad();
                 BigDecimal subtotal = precioUnitario.multiply(BigDecimal.valueOf(cantidad));
 
-                DetalleFactura detalle = DetalleFactura.builder()
+                DetalleFacturaProducto detalle = DetalleFacturaProducto.builder()
                         .producto(producto)
                         .cantidad(cantidad)
                         .precioUnitario(precioUnitario)
-                        .subtotal(subtotal)
                         .build();
 
-                existingFactura.addDetalleFactura(detalle);
+                existingFactura.addDetalleProducto(detalle);
             }
         }
 
@@ -111,43 +107,6 @@ public class FacturaService {
                 .collect(Collectors.toList());
     }
 
-    public List<FacturaDTO> searchFacturas(String fechaInicio, String fechaFin, String estado, String tipoFactura, String dniCliente) {
-        LocalDate start = fechaInicio != null ? LocalDate.parse(fechaInicio) : null;
-        LocalDate end = fechaFin != null ? LocalDate.parse(fechaFin) : null;
-
-        List<Factura> facturas = facturaRepository.findAll();
-
-        if (start != null && end != null) {
-            facturas = facturas.stream()
-                    .filter(f -> !f.getFechaEmision().isBefore(start) && !f.getFechaEmision().isAfter(end))
-                    .collect(Collectors.toList());
-        }
-
-        if (estado != null) {
-            Factura.EstadoFactura estadoEnum = Factura.EstadoFactura.valueOf(estado);
-            facturas = facturas.stream()
-                    .filter(f -> f.getEstado() == estadoEnum)
-                    .collect(Collectors.toList());
-        }
-
-        if (tipoFactura != null) {
-            Factura.TipoFactura tipoEnum = Factura.TipoFactura.valueOf(tipoFactura);
-            facturas = facturas.stream()
-                    .filter(f -> f.getTipoFactura() == tipoEnum)
-                    .collect(Collectors.toList());
-        }
-
-        if (dniCliente != null) {
-            facturas = facturas.stream()
-                    .filter(f -> f.getCliente() != null && f.getCliente().getDni().equals(dniCliente))
-                    .collect(Collectors.toList());
-        }
-
-        return facturas.stream()
-                .map(this::convertToDTO)
-                .collect(Collectors.toList());
-    }
-
     private Factura convertToEntity(FacturaDTO dto) {
         Factura factura = new Factura();
 
@@ -155,56 +114,28 @@ public class FacturaService {
                 .orElseThrow(() -> new ResourceNotFoundException("Cliente no encontrado con DNI: " + dto.getDniCliente()));
         factura.setCliente(cliente);
 
-        // --- CARGAR COTIZACIÓN ---
         if ("ConCotizacion".equals(dto.getTipoFactura()) && dto.getIdCotizacion() != null) {
             Cotizacion cotizacion = cotizacionRepository.findById(dto.getIdCotizacion())
                     .orElseThrow(() -> new ResourceNotFoundException("Cotización no encontrada con ID: " + dto.getIdCotizacion()));
             factura.setCotizacion(cotizacion);
-
-            // --- CARGAR PRODUCTOS DE LA COTIZACIÓN ---
-            if (cotizacion.getDetalleCotizacion() != null && !cotizacion.getDetalleCotizacion().isEmpty()) {
-                for (com.gemini.gemini_ambiental.entity.DetalleCotizacion detCot : cotizacion.getDetalleCotizacion()) {
-                    Producto producto = productoRepository.findById(detCot.getProducto().getIdProducto())
-                            .orElseThrow(() -> new ResourceNotFoundException("Producto no encontrado con ID: " + detCot.getProducto().getIdProducto()));
-
-                    // Calcular precios
-                    BigDecimal precioUnitario = producto.getPrecioActual();
-                    Integer cantidad = detCot.getCantidad();
-                    BigDecimal subtotal = precioUnitario.multiply(BigDecimal.valueOf(cantidad));
-
-                    DetalleFactura detalle = DetalleFactura.builder()
-                            .producto(producto)
-                            .cantidad(cantidad)
-                            .precioUnitario(precioUnitario)
-                            .subtotal(subtotal)
-                            .build();
-
-                    factura.addDetalleFactura(detalle);
-                }
-            }
         }
 
-        // --- AGREGAR PRODUCTOS DESDE EL FORMULARIO (SOBREESCRIBE LOS DE LA COTIZACIÓN SI ES NECESARIO) ---
+        // Agregar productos desde el formulario
         if (dto.getDetalleFactura() != null && !dto.getDetalleFactura().isEmpty()) {
-            // Limpiar los detalles cargados de la cotización si se envían desde el formulario
-            factura.getDetalleFactura().clear();
-
             for (FacturaDTO.DetalleFacturaDTO dtoDetalle : dto.getDetalleFactura()) {
                 Producto producto = productoRepository.findById(dtoDetalle.getIdProducto())
                         .orElseThrow(() -> new ResourceNotFoundException("Producto no encontrado con ID: " + dtoDetalle.getIdProducto()));
 
                 BigDecimal precioUnitario = producto.getPrecioActual();
                 Integer cantidad = dtoDetalle.getCantidad();
-                BigDecimal subtotal = precioUnitario.multiply(BigDecimal.valueOf(cantidad));
 
-                DetalleFactura detalle = DetalleFactura.builder()
+                DetalleFacturaProducto detalle = DetalleFacturaProducto.builder()
                         .producto(producto)
                         .cantidad(cantidad)
                         .precioUnitario(precioUnitario)
-                        .subtotal(subtotal)
                         .build();
 
-                factura.addDetalleFactura(detalle);
+                factura.addDetalleProducto(detalle);
             }
         }
 
@@ -218,32 +149,23 @@ public class FacturaService {
         return factura;
     }
 
-    // Método corregido para verificar stock
     private void actualizarStocks(Factura factura) {
-        if (factura.getDetalleFactura() != null && !factura.getDetalleFactura().isEmpty()) {
-            for (DetalleFactura detalle : factura.getDetalleFactura()) {
+        if (factura.getDetalleProductos() != null && !factura.getDetalleProductos().isEmpty()) {
+            for (DetalleFacturaProducto detalle : factura.getDetalleProductos()) {
                 String idProducto = detalle.getProducto().getIdProducto();
                 Integer cantidadUsada = detalle.getCantidad();
 
-                // ✅ LEER EL STOCK ACTUAL DIRECTAMENTE DE LA BASE DE DATOS EN ESTE PUNTO
                 Producto productoEnBD = productoRepository.findById(idProducto)
                         .orElseThrow(() -> new RuntimeException("Producto no encontrado: " + idProducto));
 
-                // ✅ VERIFICAR STOCK CON EL VALOR LEÍDO DE LA BASE DE DATOS
                 if (productoEnBD.getStock() < cantidadUsada) {
-                    throw new RuntimeException("Stock insuficiente para el producto: " + productoEnBD.getNombre() + ". Stock disponible: " + productoEnBD.getStock() + ", Requerido: " + cantidadUsada);
+                    throw new RuntimeException("Stock insuficiente para el producto: " + productoEnBD.getNombre());
                 }
 
-                // ✅ ACTUALIZAR EL STOCK EN LA BASE DE DATOS
-                // Asegúrate de que tu ProductoRepository tenga el método restarStock
                 int filasActualizadas = productoRepository.restarStock(idProducto, cantidadUsada);
                 if (filasActualizadas == 0) {
-                    // Esto podría pasar si otra transacción redujo el stock entre la lectura y la actualización
-                    throw new RuntimeException("No se pudo actualizar el stock del producto: " + idProducto + " (posible concurrencia o stock insuficiente en el momento de la actualización)");
+                    throw new RuntimeException("No se pudo actualizar el stock del producto: " + idProducto);
                 }
-
-                // Opcional: Actualizar la entidad en memoria para reflejar el cambio (no es necesario si solo se guarda una vez)
-                // productoEnBD.setStock(productoEnBD.getStock() - cantidadUsada);
             }
         }
     }
@@ -255,9 +177,9 @@ public class FacturaService {
         dto.setDniCliente(factura.getCliente() != null ? factura.getCliente().getDni() : null);
         dto.setFechaEmision(factura.getFechaEmision());
         dto.setMontoTotal(factura.getMontoTotal());
-        dto.setEstado(factura.getEstado().toString());
+        dto.setEstado(factura.getEstado().name());
         dto.setObservaciones(factura.getObservaciones());
-        dto.setTipoFactura(factura.getTipoFactura().toString());
+        dto.setTipoFactura(factura.getTipoFactura().name());
         dto.setIdCotizacion(factura.getCotizacion() != null ? factura.getCotizacion().getIdCotizacion() : null);
         dto.setFechaCreacion(factura.getFechaCreacion());
 
@@ -267,15 +189,14 @@ public class FacturaService {
             dto.setCorreoCliente(factura.getCliente().getCorreo());
         }
 
-        // --- Convertir DetalleFactura ---
-        if (factura.getDetalleFactura() != null) {
-            dto.setDetalleFactura(factura.getDetalleFactura().stream()
+        // Convertir productos
+        if (factura.getDetalleProductos() != null) {
+            dto.setDetalleFactura(factura.getDetalleProductos().stream()
                     .map(det -> {
                         FacturaDTO.DetalleFacturaDTO detalleDto = new FacturaDTO.DetalleFacturaDTO();
-                        detalleDto.setIdDetalleFactura(det.getIdDetalleFactura());
+                        detalleDto.setIdDetalleFactura(det.getIdDetalle());
                         detalleDto.setIdProducto(det.getProducto().getIdProducto());
                         detalleDto.setCantidad(det.getCantidad());
-                        detalleDto.setSubtotal(det.getSubtotal());
                         detalleDto.setPrecioUnitario(det.getPrecioUnitario());
                         return detalleDto;
                     })
@@ -283,5 +204,50 @@ public class FacturaService {
         }
 
         return dto;
+    }
+    public List<FacturaDTO> searchFacturas(String fechaInicio, String fechaFin, String estado, String tipoFactura, String dniCliente) {
+        LocalDate start = fechaInicio != null ? LocalDate.parse(fechaInicio) : null;
+        LocalDate end = fechaFin != null ? LocalDate.parse(fechaFin) : null;
+
+        List<Factura> facturas = facturaRepository.findAll();
+
+        if (start != null && end != null) {
+            facturas = facturas.stream()
+                    .filter(f -> !f.getFechaEmision().isBefore(start) && !f.getFechaEmision().isAfter(end))
+                    .collect(Collectors.toList());
+        }
+
+        if (estado != null) {
+            try {
+                Factura.EstadoFactura estadoEnum = Factura.EstadoFactura.valueOf(estado.toUpperCase());
+                facturas = facturas.stream()
+                        .filter(f -> f.getEstado() == estadoEnum)
+                        .collect(Collectors.toList());
+            } catch (IllegalArgumentException e) {
+                // Si el estado es inválido, devuelve lista vacía o ignora
+                facturas = new ArrayList<>();
+            }
+        }
+
+        if (tipoFactura != null) {
+            try {
+                Factura.TipoFactura tipoEnum = Factura.TipoFactura.valueOf(tipoFactura);
+                facturas = facturas.stream()
+                        .filter(f -> f.getTipoFactura() == tipoEnum)
+                        .collect(Collectors.toList());
+            } catch (IllegalArgumentException e) {
+                facturas = new ArrayList<>();
+            }
+        }
+
+        if (dniCliente != null) {
+            facturas = facturas.stream()
+                    .filter(f -> f.getCliente() != null && f.getCliente().getDni().equals(dniCliente))
+                    .collect(Collectors.toList());
+        }
+
+        return facturas.stream()
+                .map(this::convertToDTO)
+                .collect(Collectors.toList());
     }
 }

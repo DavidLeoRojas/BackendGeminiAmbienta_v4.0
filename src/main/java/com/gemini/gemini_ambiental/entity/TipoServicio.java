@@ -1,4 +1,3 @@
-// src/main/java/com/gemini/gemini_ambiental/entity/TipoServicio.java
 package com.gemini.gemini_ambiental.entity;
 
 import jakarta.persistence.*;
@@ -8,7 +7,7 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "Tipo_servicio")
+@Table(name = "tipo_servicio")
 @Getter
 @Setter
 @NoArgsConstructor
@@ -18,7 +17,7 @@ public class TipoServicio {
 
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
-    @Column(name = "ID_tipo_servicio", length = 36)
+    @Column(name = "id_tipo_servicio", length = 36)
     private String idTipoServicio;
 
     @Column(name = "nombre_servicio", nullable = false, length = 255)
@@ -36,12 +35,13 @@ public class TipoServicio {
     @Column(name = "duracion", length = 100)
     private String duracion;
 
-    @Column(name = "estado", nullable = false, length = 50)
-    private String estado;
+    @Column(name = "estado", nullable = false, length = 20)
+    @Builder.Default
+    private String estado = "ACTIVO";
 
-    // Este es el campo correcto que existe en la DB
     @Column(name = "activo")
-    private Boolean activo = true; // El valor por defecto se maneja aquí
+    @Builder.Default
+    private Boolean activo = true;
 
     @Column(name = "icono", length = 50)
     private String icono;
@@ -50,7 +50,7 @@ public class TipoServicio {
     private LocalDateTime fechaCreacion;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "ID_categoria_servicio", nullable = false)
+    @JoinColumn(name = "id_categoria_servicio", nullable = false)
     private CategoriaServicio categoriaServicio;
 
     @PrePersist
@@ -61,7 +61,6 @@ public class TipoServicio {
         if (estado == null || estado.isEmpty()) {
             estado = "ACTIVO";
         }
-        // Aseguramos que 'activo' no sea null
         if (activo == null) {
             activo = true;
         }

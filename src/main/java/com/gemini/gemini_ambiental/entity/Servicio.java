@@ -9,7 +9,7 @@ import java.time.LocalDateTime;
 import java.time.LocalTime;
 
 @Entity
-@Table(name = "Servicio")
+@Table(name = "servicio")
 @Getter
 @Setter
 @NoArgsConstructor
@@ -18,20 +18,20 @@ import java.time.LocalTime;
 public class Servicio {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.UUID) // ✅ Esto es correcto
-    @Column(name = "ID_servicio", length = 36, updatable = false) // updatable = false es opcional pero seguro
+    @GeneratedValue(strategy = GenerationType.UUID)
+    @Column(name = "id_servicio", length = 36, updatable = false)
     private String idServicio;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "ID_cotizacion")
+    @JoinColumn(name = "id_cotizacion")
     private Cotizacion cotizacion;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "DNI_empleado_asignado", referencedColumnName = "dni")
+    @JoinColumn(name = "dni_empleado_asignado", referencedColumnName = "dni")
     private Persona empleadoAsignado;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "DNI_cliente", nullable = false, referencedColumnName = "dni")
+    @JoinColumn(name = "dni_cliente", nullable = false, referencedColumnName = "dni")
     private Persona cliente;
 
     @NotNull(message = "La fecha es obligatoria")
@@ -46,20 +46,23 @@ public class Servicio {
     @Column(name = "duracion_estimada", length = 100)
     private String duracionEstimada;
 
-    @Column(name = "observaciones", length = 500)
+    @Column(name = "observaciones", columnDefinition = "TEXT")
     private String observaciones;
 
     @Column(name = "prioridad", length = 50)
     private String prioridad;
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "estado", nullable = false)
-    private EstadoServicio estado = EstadoServicio.Programado;
+    @Column(name = "estado", nullable = false, length = 20)
+    @Builder.Default
+    private EstadoServicio estado = EstadoServicio.PROGRAMADO;
 
     @Column(name = "activo", nullable = false)
+    @Builder.Default
     private Boolean activo = true;
 
     @Column(name = "servicio_sin_cotizacion", nullable = false)
+    @Builder.Default
     private Boolean servicioSinCotizacion = false;
 
     @ManyToOne(fetch = FetchType.LAZY)
@@ -67,6 +70,7 @@ public class Servicio {
     private TipoServicio tipoServicio;
 
     @Column(name = "fecha_creacion", updatable = false)
+    @Builder.Default
     private LocalDateTime fechaCreacion = LocalDateTime.now();
 
     @PrePersist
@@ -75,6 +79,6 @@ public class Servicio {
     }
 
     public enum EstadoServicio {
-        Programado, EnProgreso, Completado, Cancelado
+        PROGRAMADO, EN_PROGRESO, COMPLETADO, CANCELADO
     }
 }

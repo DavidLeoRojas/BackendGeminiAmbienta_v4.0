@@ -33,20 +33,21 @@ public class DetalleCotizacion {
     @Column(name = "precio_unitario", precision = 12, scale = 2, nullable = false)
     private BigDecimal precioUnitario;
 
-    // Constructor simplificado para crear detalles
+    @Column(name = "costos_extra", precision = 12, scale = 2)
+    private BigDecimal costosExtra;
+
+    @Column(name = "descripcion_costos_extra", columnDefinition = "TEXT")
+    private String descripcionCostosExtra;
+
+    @Column(name = "subtotal", precision = 12, scale = 2, nullable = false)
+    private BigDecimal subtotal;
+
     public DetalleCotizacion(Cotizacion cotizacion, Producto producto, Integer cantidad, BigDecimal precioUnitario) {
         this.cotizacion = cotizacion;
         this.producto = producto;
         this.cantidad = cantidad;
         this.precioUnitario = precioUnitario;
-    }
-
-    // Método para calcular subtotal
-    @Transient
-    public BigDecimal getSubtotal() {
-        if (precioUnitario != null && cantidad != null) {
-            return precioUnitario.multiply(BigDecimal.valueOf(cantidad));
-        }
-        return BigDecimal.ZERO;
+        this.costosExtra = BigDecimal.ZERO;
+        this.subtotal = precioUnitario.multiply(BigDecimal.valueOf(cantidad));
     }
 }
