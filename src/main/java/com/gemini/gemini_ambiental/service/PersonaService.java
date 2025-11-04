@@ -111,7 +111,7 @@ public class PersonaService implements UserDetailsService {
         if (personaDTO.getIdDireccion() != null) {
             try {
                 UUID idDireccion = UUID.fromString(personaDTO.getIdDireccion());
-                Direccion direccion = direccionRepository.findById(idDireccion)
+                Direccion direccion = direccionRepository.findById(String.valueOf(idDireccion))
                         .orElseThrow(() -> new ResourceNotFoundException("Dirección no encontrada con ID: " + personaDTO.getIdDireccion()));
                 existingPersona.setDireccion(direccion);
             } catch (IllegalArgumentException e) {
@@ -223,7 +223,7 @@ public class PersonaService implements UserDetailsService {
         if (dto.getIdDireccion() != null) {
             try {
                 UUID idDireccion = UUID.fromString(dto.getIdDireccion());
-                Direccion direccion = direccionRepository.findById(idDireccion).orElse(null);
+                Direccion direccion = direccionRepository.findById(String.valueOf(idDireccion)).orElse(null);
                 persona.setDireccion(direccion);
             } catch (IllegalArgumentException e) {
                 throw new RuntimeException("ID de dirección inválido en DTO: debe ser un UUID válido");
@@ -257,14 +257,13 @@ public class PersonaService implements UserDetailsService {
         dto.setFechaCreacion(persona.getFechaCreacion());
 
         if (persona.getDireccion() != null) {
-            dto.setIdDireccion(persona.getDireccion().getIdDireccion().toString());
+            dto.setIdDireccion(persona.getDireccion().getIdDireccion().toString()); // ✅
             dto.setNombreDireccion(persona.getDireccion().getNombre());
         }
         if (persona.getCargoEspecialidad() != null) {
-            dto.setIdCargoEspecialidad(persona.getCargoEspecialidad().getIdCargoEspecialidad().toString());
+            dto.setIdCargoEspecialidad(persona.getCargoEspecialidad().getIdCargoEspecialidad().toString()); // ✅
             dto.setNombreCargo(persona.getCargoEspecialidad().getNombre());
         }
-
         return dto;
     }
 }
