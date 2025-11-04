@@ -9,6 +9,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
 @Service
@@ -25,23 +26,29 @@ public class CargoEspecialidadService {
     }
 
     public CargoEspecialidadDTO getCargoById(String id) {
-        CargoEspecialidad cargo = cargoEspecialidadRepository.findById(id)
+        if (id == null || id.trim().isEmpty()) {
+            throw new ResourceNotFoundException("ID de cargo no proporcionado");
+        }
+        UUID uuid;
+        try {
+            uuid = UUID.fromString(id);
+        } catch (IllegalArgumentException e) {
+            throw new ResourceNotFoundException("ID inválido: debe ser un UUID válido");
+        }
+        CargoEspecialidad cargo = cargoEspecialidadRepository.findById(uuid)
                 .orElseThrow(() -> new ResourceNotFoundException("Cargo no encontrado con ID: " + id));
         return convertToDTO(cargo);
     }
 
-    // Otros métodos (create, update, delete) si es necesario
-
     private CargoEspecialidadDTO convertToDTO(CargoEspecialidad cargo) {
         CargoEspecialidadDTO dto = new CargoEspecialidadDTO();
-        dto.setIdCargoEspecialidad(cargo.getIdCargoEspecialidad());
+        dto.setIdCargoEspecialidad(cargo.getIdCargoEspecialidad().toString());
         dto.setNombre(cargo.getNombre());
         dto.setDescripcion(cargo.getDescripcion());
         dto.setFechaCreacion(cargo.getFechaCreacion());
-        // Mapear categoriaServicio si es necesario
         if (cargo.getCategoriaServicio() != null) {
-            dto.setIdCategoriaServicio(cargo.getCategoriaServicio().getIdCategoriaServicio());
-            dto.setNombreCategoria(cargo.getCategoriaServicio().getNombre()); // Campo adicional para UI
+            dto.setIdCategoriaServicio(cargo.getCategoriaServicio().getIdCategoriaServicio().toString());
+            dto.setNombreCategoria(cargo.getCategoriaServicio().getNombre());
         }
         return dto;
     }

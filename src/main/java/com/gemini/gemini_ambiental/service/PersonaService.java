@@ -9,17 +9,18 @@ import com.gemini.gemini_ambiental.repository.DireccionRepository;
 import com.gemini.gemini_ambiental.repository.CargoEspecialidadRepository;
 import com.gemini.gemini_ambiental.dto.PersonaDTO;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.annotation.Lazy; // Importar Lazy
+import org.springframework.context.annotation.Lazy;
 import org.springframework.security.core.userdetails.User;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
-import org.springframework.security.crypto.password.PasswordEncoder; // Importar PasswordEncoder
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
 @Service
@@ -35,9 +36,8 @@ public class PersonaService implements UserDetailsService {
     @Autowired
     private CargoEspecialidadRepository cargoEspecialidadRepository;
 
-    // ✅ Inyectar PasswordEncoder con @Lazy para romper la dependencia circular en tiempo de creación
     @Autowired
-    @Lazy // <-- Añadido @Lazy aquí
+    @Lazy
     private PasswordEncoder passwordEncoder;
 
     @Override
@@ -45,23 +45,20 @@ public class PersonaService implements UserDetailsService {
         Persona persona = personaRepository.findByCorreo(email)
                 .orElseThrow(() -> new UsernameNotFoundException("Usuario no encontrado con correo: " + email));
 
-        // ✅ VALIDACIÓN CLAVE: Solo permitir login a empleados
         if (!"Empleado".equals(persona.getRol())) {
             throw new UsernameNotFoundException("Acceso denegado: Solo los empleados pueden iniciar sesión.");
         }
 
-        // ✅ Asignar el rol correcto para que Spring Security lo reconozca
         return User.builder()
                 .username(persona.getCorreo())
-                .password(persona.getPassword()) // La contraseña debe estar hasheada
-                .authorities("ROLE_Empleado") // <-- Rol específico
+                .password(persona.getPassword())
+                .authorities("ROLE_Empleado")
                 .build();
     }
 
     public PersonaDTO createPersona(PersonaDTO personaDTO) {
         Persona persona = convertToEntity(personaDTO);
 
-        // Validar si el correo ya existe
         if (personaDTO.getCorreo() != null) {
             personaRepository.findByCorreo(personaDTO.getCorreo())
                     .ifPresent(existing -> {
@@ -69,14 +66,12 @@ public class PersonaService implements UserDetailsService {
                     });
         }
 
-        // ✅ GENERAR CONTRASEÑA AUTOMÁTICAMENTE ANTES DE GUARDAR
         String dni = persona.getDni();
         String correo = persona.getCorreo();
         if (dni == null || dni.trim().isEmpty() || correo == null || correo.trim().isEmpty()) {
             throw new RuntimeException("El DNI y el correo son obligatorios para generar la contraseña.");
         }
         String contrasenaPlana = dni + correo.toLowerCase();
-        // ✅ Hashear la contraseña antes de guardarla usando el bean inyectado perezosamente
         persona.setPassword(passwordEncoder.encode(contrasenaPlana));
 
         Persona savedPersona = personaRepository.save(persona);
@@ -87,7 +82,6 @@ public class PersonaService implements UserDetailsService {
         Persona existingPersona = personaRepository.findByDni(dni)
                 .orElseThrow(() -> new ResourceNotFoundException("Persona no encontrada con DNI: " + dni));
 
-        // Validar si el correo ya existe (excluyendo el actual)
         if (personaDTO.getCorreo() != null && !personaDTO.getCorreo().equals(existingPersona.getCorreo())) {
             personaRepository.findByCorreo(personaDTO.getCorreo())
                     .ifPresent(existing -> {
@@ -95,12 +89,11 @@ public class PersonaService implements UserDetailsService {
                     });
         }
 
-        // Actualizar campos
         existingPersona.setNombre(personaDTO.getNombre());
         existingPersona.setTelefono(personaDTO.getTelefono());
         existingPersona.setCorreo(personaDTO.getCorreo());
         existingPersona.setRol(personaDTO.getRol());
-        // Actualizar tipoPersona con manejo de null
+
         String tipoPersonaStr = personaDTO.getTipoPersona();
         if (tipoPersonaStr == null || tipoPersonaStr.trim().isEmpty()) {
             existingPersona.setTipoPersona(Persona.TipoPersona.Natural);
@@ -114,19 +107,30 @@ public class PersonaService implements UserDetailsService {
         existingPersona.setRepresentanteLegal(personaDTO.getRepresentanteLegal());
         existingPersona.setNit(personaDTO.getNit());
 
-        // Actualizar relaciones
+        // --- Corrección: Convertir String → UUID para dirección ---
         if (personaDTO.getIdDireccion() != null) {
-            Direccion direccion = direccionRepository.findById(personaDTO.getIdDireccion())
-                    .orElseThrow(() -> new ResourceNotFoundException("Dirección no encontrada con ID: " + personaDTO.getIdDireccion()));
-            existingPersona.setDireccion(direccion);
+            try {
+                UUID idDireccion = UUID.fromString(personaDTO.getIdDireccion());
+                Direccion direccion = direccionRepository.findById(idDireccion)
+                        .orElseThrow(() -> new ResourceNotFoundException("Dirección no encontrada con ID: " + personaDTO.getIdDireccion()));
+                existingPersona.setDireccion(direccion);
+            } catch (IllegalArgumentException e) {
+                throw new RuntimeException("ID de dirección inválido: debe ser un UUID válido");
+            }
         } else {
             existingPersona.setDireccion(null);
         }
 
+        // --- Corrección: Convertir String → UUID para cargo ---
         if (personaDTO.getIdCargoEspecialidad() != null) {
-            CargoEspecialidad cargo = cargoEspecialidadRepository.findById(personaDTO.getIdCargoEspecialidad())
-                    .orElseThrow(() -> new ResourceNotFoundException("Cargo no encontrado con ID: " + personaDTO.getIdCargoEspecialidad()));
-            existingPersona.setCargoEspecialidad(cargo);
+            try {
+                UUID idCargo = UUID.fromString(personaDTO.getIdCargoEspecialidad());
+                CargoEspecialidad cargo = cargoEspecialidadRepository.findById(idCargo)
+                        .orElseThrow(() -> new ResourceNotFoundException("Cargo no encontrado con ID: " + personaDTO.getIdCargoEspecialidad()));
+                existingPersona.setCargoEspecialidad(cargo);
+            } catch (IllegalArgumentException e) {
+                throw new RuntimeException("ID de cargo inválido: debe ser un UUID válido");
+            }
         } else {
             existingPersona.setCargoEspecialidad(null);
         }
@@ -138,11 +142,6 @@ public class PersonaService implements UserDetailsService {
     public void deletePersona(String dni) {
         Persona persona = personaRepository.findByDni(dni)
                 .orElseThrow(() -> new ResourceNotFoundException("Persona no encontrada con DNI: " + dni));
-
-        // Verificar si tiene relaciones críticas antes de eliminar
-        // (Implementar lógica de verificación según sea necesario)
-        // Ejemplo: verificar cotizaciones, servicios, facturas asociadas
-
         personaRepository.delete(persona);
     }
 
@@ -159,7 +158,6 @@ public class PersonaService implements UserDetailsService {
     }
 
     public List<PersonaDTO> searchPersonas(String searchTerm) {
-        // Implementar búsqueda más compleja si es necesario
         return personaRepository.findAll().stream()
                 .filter(p -> searchTerm == null || searchTerm.isEmpty() ||
                         p.getNombre().toLowerCase().contains(searchTerm.toLowerCase()) ||
@@ -176,7 +174,7 @@ public class PersonaService implements UserDetailsService {
 
     private Persona convertToEntity(PersonaDTO dto) {
         Persona persona = new Persona();
-        // --- CORRECCIÓN PRINCIPAL: Establecer DNI según tipo de persona ---
+
         String tipoPersonaStr = dto.getTipoPersona();
         Persona.TipoPersona tipoPersonaEnum;
         if (tipoPersonaStr == null || tipoPersonaStr.trim().isEmpty()) {
@@ -185,65 +183,63 @@ public class PersonaService implements UserDetailsService {
             try {
                 tipoPersonaEnum = Persona.TipoPersona.valueOf(tipoPersonaStr);
             } catch (IllegalArgumentException e) {
-                tipoPersonaEnum = Persona.TipoPersona.Natural; // Valor por defecto
+                tipoPersonaEnum = Persona.TipoPersona.Natural;
             }
         }
 
         if (tipoPersonaEnum == Persona.TipoPersona.Juridica) {
-            // Para persona jurídica, el DNI debe ser el NIT (según el trigger de la BD)
             String nit = dto.getNit();
             if (nit != null && !nit.trim().isEmpty()) {
-                persona.setDni(nit.trim()); // ✅ Asignar NIT al DNI
+                persona.setDni(nit.trim());
             } else {
-                // Opcional: Lanzar una excepción si NIT es obligatorio para jurídicas
-                // throw new IllegalArgumentException("El NIT es obligatorio para personas jurídicas.");
-                // O asignar un valor temporal o vacío si la validación la hará el trigger
-                persona.setDni(null); // O un valor por defecto si es necesario
+                persona.setDni(null);
             }
         } else {
-            // Para persona natural, usar el DNI enviado por el frontend
             persona.setDni(dto.getDni());
         }
-        // --- FIN CORRECCIÓN ---
 
-        // --- CORRECCIÓN: Manejar tipoDni nulo o vacío ---
         String tipoDni = dto.getTipoDni();
         if (tipoDni == null || tipoDni.trim().isEmpty()) {
-            persona.setTipoDni("CC"); // O el valor por defecto que desees
+            persona.setTipoDni("CC");
         } else {
             persona.setTipoDni(tipoDni);
         }
-        // --- FIN CORRECCIÓN ---
 
         persona.setNombre(dto.getNombre());
         persona.setTelefono(dto.getTelefono());
         persona.setCorreo(dto.getCorreo());
         persona.setRol(dto.getRol());
-
-        // Asegúrate de manejar tipoPersona de la misma manera si aplica
         persona.setTipoPersona(tipoPersonaEnum);
 
-        // Importante: Solo asignar NIT y Representante Legal si es Jurídica
         if (tipoPersonaEnum == Persona.TipoPersona.Juridica) {
-            persona.setNit(dto.getNit()); // Este valor también se usa para el DNI
+            persona.setNit(dto.getNit());
             persona.setRepresentanteLegal(dto.getRepresentanteLegal());
         } else {
-            // Para naturales, asegurar que estos campos sean null
             persona.setNit(null);
             persona.setRepresentanteLegal(null);
         }
 
-
+        // --- Corrección en convertToEntity también ---
         if (dto.getIdDireccion() != null) {
-            Direccion direccion = direccionRepository.findById(dto.getIdDireccion())
-                    .orElse(null);
-            persona.setDireccion(direccion);
+            try {
+                UUID idDireccion = UUID.fromString(dto.getIdDireccion());
+                Direccion direccion = direccionRepository.findById(idDireccion).orElse(null);
+                persona.setDireccion(direccion);
+            } catch (IllegalArgumentException e) {
+                throw new RuntimeException("ID de dirección inválido en DTO: debe ser un UUID válido");
+            }
         }
+
         if (dto.getIdCargoEspecialidad() != null) {
-            CargoEspecialidad cargo = cargoEspecialidadRepository.findById(dto.getIdCargoEspecialidad())
-                    .orElse(null);
-            persona.setCargoEspecialidad(cargo);
+            try {
+                UUID idCargo = UUID.fromString(dto.getIdCargoEspecialidad());
+                CargoEspecialidad cargo = cargoEspecialidadRepository.findById(idCargo).orElse(null);
+                persona.setCargoEspecialidad(cargo);
+            } catch (IllegalArgumentException e) {
+                throw new RuntimeException("ID de cargo inválido en DTO: debe ser un UUID válido");
+            }
         }
+
         return persona;
     }
 
@@ -260,13 +256,12 @@ public class PersonaService implements UserDetailsService {
         dto.setNit(persona.getNit());
         dto.setFechaCreacion(persona.getFechaCreacion());
 
-        // Mapear relaciones para la UI
         if (persona.getDireccion() != null) {
-            dto.setIdDireccion(persona.getDireccion().getIdDireccion());
+            dto.setIdDireccion(persona.getDireccion().getIdDireccion().toString());
             dto.setNombreDireccion(persona.getDireccion().getNombre());
         }
         if (persona.getCargoEspecialidad() != null) {
-            dto.setIdCargoEspecialidad(persona.getCargoEspecialidad().getIdCargoEspecialidad());
+            dto.setIdCargoEspecialidad(persona.getCargoEspecialidad().getIdCargoEspecialidad().toString());
             dto.setNombreCargo(persona.getCargoEspecialidad().getNombre());
         }
 

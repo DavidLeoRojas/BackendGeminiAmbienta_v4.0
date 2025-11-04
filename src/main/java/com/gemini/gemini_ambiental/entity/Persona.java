@@ -65,11 +65,11 @@ public class Persona {
 
     @Column(name = "fecha_creacion", updatable = false)
     @Builder.Default
-    private LocalDateTime fechaCreacion = LocalDateTime.now();
+    private java.time.LocalDateTime fechaCreacion = java.time.LocalDateTime.now();
 
     @PrePersist
     protected void onCreate() {
-        this.fechaCreacion = LocalDateTime.now();
+        this.fechaCreacion = java.time.LocalDateTime.now();
     }
 
     public enum TipoPersona {

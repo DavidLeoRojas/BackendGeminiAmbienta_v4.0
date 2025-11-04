@@ -15,11 +15,9 @@ import java.util.UUID;
 @Builder
 public class CargoEspecialidad {
 
-
-
     @Id
-    @GeneratedValue(strategy = GenerationType.UUID)
-    @Column(name = "id_cargo_especialidad")
+    @GeneratedValue
+    @Column(name = "id_cargo_especialidad", columnDefinition = "UUID")
     private UUID idCargoEspecialidad;
 
     @NotBlank(message = "El nombre es obligatorio")
