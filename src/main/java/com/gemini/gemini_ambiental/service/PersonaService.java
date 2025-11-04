@@ -45,6 +45,7 @@ public class PersonaService implements UserDetailsService {
         Persona persona = personaRepository.findByCorreo(email)
                 .orElseThrow(() -> new UsernameNotFoundException("Usuario no encontrado con correo: " + email));
 
+        // ✅ VALIDACIÓN CLAVE: Solo permitir login a empleados
         if (!"Empleado".equals(persona.getRol())) {
             throw new UsernameNotFoundException("Acceso denegado: Solo los empleados pueden iniciar sesión.");
         }
