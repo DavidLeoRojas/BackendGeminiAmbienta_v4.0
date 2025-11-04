@@ -45,7 +45,6 @@ public class PersonaService implements UserDetailsService {
         Persona persona = personaRepository.findByCorreo(email)
                 .orElseThrow(() -> new UsernameNotFoundException("Usuario no encontrado con correo: " + email));
 
-        // ✅ VALIDACIÓN CLAVE: Solo permitir login a empleados
         if (!"Empleado".equals(persona.getRol())) {
             throw new UsernameNotFoundException("Acceso denegado: Solo los empleados pueden iniciar sesión.");
         }
@@ -112,7 +111,7 @@ public class PersonaService implements UserDetailsService {
         if (personaDTO.getIdDireccion() != null) {
             try {
                 UUID idDireccion = UUID.fromString(personaDTO.getIdDireccion());
-                Direccion direccion = direccionRepository.findById(String.valueOf(idDireccion))
+                Direccion direccion = direccionRepository.findById(idDireccion)
                         .orElseThrow(() -> new ResourceNotFoundException("Dirección no encontrada con ID: " + personaDTO.getIdDireccion()));
                 existingPersona.setDireccion(direccion);
             } catch (IllegalArgumentException e) {
@@ -224,7 +223,7 @@ public class PersonaService implements UserDetailsService {
         if (dto.getIdDireccion() != null) {
             try {
                 UUID idDireccion = UUID.fromString(dto.getIdDireccion());
-                Direccion direccion = direccionRepository.findById(String.valueOf(idDireccion)).orElse(null);
+                Direccion direccion = direccionRepository.findById(idDireccion).orElse(null);
                 persona.setDireccion(direccion);
             } catch (IllegalArgumentException e) {
                 throw new RuntimeException("ID de dirección inválido en DTO: debe ser un UUID válido");
