@@ -4,6 +4,8 @@ import jakarta.persistence.*;
 import jakarta.validation.constraints.NotBlank;
 import lombok.*;
 
+import java.util.UUID;
+
 @Entity
 @Table(name = "cargo_especialidad")
 @Getter
@@ -13,10 +15,12 @@ import lombok.*;
 @Builder
 public class CargoEspecialidad {
 
+
+
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
-    @Column(name = "id_cargo_especialidad", length = 36)
-    private String idCargoEspecialidad;
+    @Column(name = "id_cargo_especialidad")
+    private UUID idCargoEspecialidad;
 
     @NotBlank(message = "El nombre es obligatorio")
     @Column(name = "nombre", length = 255, nullable = false)
