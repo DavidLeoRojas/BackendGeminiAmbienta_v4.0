@@ -27,11 +27,14 @@ public interface FacturaRepository extends JpaRepository<Factura, String> {
     Long countPendingInvoices();
 
     // --- ACTUALIZADO: Incluir detalleFactura y producto ---
+    // En FacturaRepository.java
     @Query("SELECT f FROM Factura f " +
             "JOIN FETCH f.cliente " +
             "LEFT JOIN FETCH f.cotizacion " +
-            "LEFT JOIN FETCH f.detalleFactura df " +
-            "LEFT JOIN FETCH df.producto " +
+            "LEFT JOIN FETCH f.detalleProductos dp " +      // ✅ detalleProductos (no detalleFactura)
+            "LEFT JOIN FETCH dp.producto " +                // ✅ producto está en DetalleFacturaProducto
+            "LEFT JOIN FETCH f.detalleServicios ds " +      // ✅ también cargar servicios si los necesitas
+            "LEFT JOIN FETCH ds.servicio " +
             "WHERE f.idFactura = :id")
     Optional<Factura> findByIdWithRelations(@Param("id") String id);
 }
