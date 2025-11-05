@@ -1,17 +1,12 @@
-FROM eclipse-temurin:17-jdk AS build
+# Etapa 1: Construcción
+FROM maven:3.9.6-eclipse-temurin-17 AS build
 WORKDIR /app
-
-COPY mvnw .
-COPY .mvn .mvn
 COPY pom.xml .
-RUN chmod +x mvnw
-RUN ./mvnw dependency:go-offline
+COPY src ./src
+RUN mvn clean package -DskipTests
 
-COPY src src
-RUN chmod +x mvnw
-RUN ./mvnw clean package -DskipTests
-
-FROM eclipse-temurin:17-jre
+# Etapa 2: Ejecución
+FROM eclipse-temurin:17-jdk-alpine
 WORKDIR /app
 COPY --from=build /app/target/*.jar app.jar
 EXPOSE 8080
