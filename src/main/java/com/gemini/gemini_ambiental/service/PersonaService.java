@@ -20,7 +20,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Optional;
-import java.util.UUID;
+// import java.util.UUID; // Ya no necesitas importar UUID
 import java.util.stream.Collectors;
 
 @Service
@@ -107,30 +107,22 @@ public class PersonaService implements UserDetailsService {
         existingPersona.setRepresentanteLegal(personaDTO.getRepresentanteLegal());
         existingPersona.setNit(personaDTO.getNit());
 
-        // --- Corrección: Convertir String → UUID para dirección ---
+        // --- Corrección: No convertir String → UUID para dirección ---
         if (personaDTO.getIdDireccion() != null) {
-            try {
-                UUID idDireccion = UUID.fromString(personaDTO.getIdDireccion());
-                Direccion direccion = direccionRepository.findById(idDireccion)
-                        .orElseThrow(() -> new ResourceNotFoundException("Dirección no encontrada con ID: " + personaDTO.getIdDireccion()));
-                existingPersona.setDireccion(direccion);
-            } catch (IllegalArgumentException e) {
-                throw new RuntimeException("ID de dirección inválido: debe ser un UUID válido");
-            }
+            // No necesitas convertir a UUID
+            Direccion direccion = direccionRepository.findById(personaDTO.getIdDireccion())
+                    .orElseThrow(() -> new ResourceNotFoundException("Dirección no encontrada con ID: " + personaDTO.getIdDireccion()));
+            existingPersona.setDireccion(direccion);
         } else {
             existingPersona.setDireccion(null);
         }
 
-        // --- Corrección: Convertir String → UUID para cargo ---
+        // --- Corrección: No convertir String → UUID para cargo ---
         if (personaDTO.getIdCargoEspecialidad() != null) {
-            try {
-                UUID idCargo = UUID.fromString(personaDTO.getIdCargoEspecialidad());
-                CargoEspecialidad cargo = cargoEspecialidadRepository.findById(idCargo)
-                        .orElseThrow(() -> new ResourceNotFoundException("Cargo no encontrado con ID: " + personaDTO.getIdCargoEspecialidad()));
-                existingPersona.setCargoEspecialidad(cargo);
-            } catch (IllegalArgumentException e) {
-                throw new RuntimeException("ID de cargo inválido: debe ser un UUID válido");
-            }
+            // No necesitas convertir a UUID
+            CargoEspecialidad cargo = cargoEspecialidadRepository.findById(personaDTO.getIdCargoEspecialidad())
+                    .orElseThrow(() -> new ResourceNotFoundException("Cargo no encontrado con ID: " + personaDTO.getIdCargoEspecialidad()));
+            existingPersona.setCargoEspecialidad(cargo);
         } else {
             existingPersona.setCargoEspecialidad(null);
         }
@@ -221,23 +213,15 @@ public class PersonaService implements UserDetailsService {
 
         // --- Corrección en convertToEntity también ---
         if (dto.getIdDireccion() != null) {
-            try {
-                UUID idDireccion = UUID.fromString(dto.getIdDireccion());
-                Direccion direccion = direccionRepository.findById(idDireccion).orElse(null);
-                persona.setDireccion(direccion);
-            } catch (IllegalArgumentException e) {
-                throw new RuntimeException("ID de dirección inválido en DTO: debe ser un UUID válido");
-            }
+            // No necesitas convertir a UUID
+            Direccion direccion = direccionRepository.findById(dto.getIdDireccion()).orElse(null);
+            persona.setDireccion(direccion);
         }
 
         if (dto.getIdCargoEspecialidad() != null) {
-            try {
-                UUID idCargo = UUID.fromString(dto.getIdCargoEspecialidad());
-                CargoEspecialidad cargo = cargoEspecialidadRepository.findById(idCargo).orElse(null);
-                persona.setCargoEspecialidad(cargo);
-            } catch (IllegalArgumentException e) {
-                throw new RuntimeException("ID de cargo inválido en DTO: debe ser un UUID válido");
-            }
+            // No necesitas convertir a UUID
+            CargoEspecialidad cargo = cargoEspecialidadRepository.findById(dto.getIdCargoEspecialidad()).orElse(null);
+            persona.setCargoEspecialidad(cargo);
         }
 
         return persona;
@@ -256,13 +240,15 @@ public class PersonaService implements UserDetailsService {
         dto.setNit(persona.getNit());
         dto.setFechaCreacion(persona.getFechaCreacion());
 
-        // ✅ CORRECCIÓN PRINCIPAL: Convertir UUID → String
+        // --- Corrección principal: No convertir UUID a String ---
         if (persona.getDireccion() != null) {
-            dto.setIdDireccion(persona.getDireccion().getIdDireccion().toString());
+            // El ID ya es String, no necesitas toString()
+            dto.setIdDireccion(persona.getDireccion().getIdDireccion());
             dto.setNombreDireccion(persona.getDireccion().getNombre());
         }
         if (persona.getCargoEspecialidad() != null) {
-            dto.setIdCargoEspecialidad(persona.getCargoEspecialidad().getIdCargoEspecialidad().toString());
+            // El ID ya es String, no necesitas toString()
+            dto.setIdCargoEspecialidad(persona.getCargoEspecialidad().getIdCargoEspecialidad());
             dto.setNombreCargo(persona.getCargoEspecialidad().getNombre());
         }
 

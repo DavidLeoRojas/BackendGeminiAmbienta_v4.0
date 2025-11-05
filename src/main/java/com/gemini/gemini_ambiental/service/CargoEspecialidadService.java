@@ -9,7 +9,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
-import java.util.UUID;
 import java.util.stream.Collectors;
 
 @Service
@@ -25,29 +24,25 @@ public class CargoEspecialidadService {
                 .collect(Collectors.toList());
     }
 
-    public CargoEspecialidadDTO getCargoById(String id) {
-        if (id == null || id.trim().isEmpty()) {
-            throw new ResourceNotFoundException("ID de cargo no proporcionado");
-        }
-        UUID uuid;
-        try {
-            uuid = UUID.fromString(id);
-        } catch (IllegalArgumentException e) {
-            throw new ResourceNotFoundException("ID inválido: debe ser un UUID válido");
-        }
-        CargoEspecialidad cargo = cargoEspecialidadRepository.findById(uuid)
+    public CargoEspecialidadDTO getCargoById(String id) { // El ID entra como String
+        // No necesitas convertir a UUID
+        CargoEspecialidad cargo = cargoEspecialidadRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Cargo no encontrado con ID: " + id));
         return convertToDTO(cargo);
     }
 
+    // Otros métodos (create, update, delete) aquí...
+
     private CargoEspecialidadDTO convertToDTO(CargoEspecialidad cargo) {
         CargoEspecialidadDTO dto = new CargoEspecialidadDTO();
-        dto.setIdCargoEspecialidad(cargo.getIdCargoEspecialidad().toString());
+        // El ID ya es String, no necesitas toString()
+        dto.setIdCargoEspecialidad(cargo.getIdCargoEspecialidad());
         dto.setNombre(cargo.getNombre());
         dto.setDescripcion(cargo.getDescripcion());
-        dto.setFechaCreacion(cargo.getFechaCreacion());
+        dto.setFechaCreacion(cargo.getFechaCreacion()); // Asegúrate de que CargoEspecialidad tenga este campo y getter
         if (cargo.getCategoriaServicio() != null) {
-            dto.setIdCategoriaServicio(cargo.getCategoriaServicio().getIdCategoriaServicio().toString());
+            // El ID ya es String, no necesitas toString()
+            dto.setIdCategoriaServicio(cargo.getCategoriaServicio().getIdCategoriaServicio());
             dto.setNombreCategoria(cargo.getCategoriaServicio().getNombre());
         }
         return dto;

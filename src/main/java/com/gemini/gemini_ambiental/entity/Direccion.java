@@ -1,40 +1,58 @@
 package com.gemini.gemini_ambiental.entity;
 
 import jakarta.persistence.*;
-import jakarta.validation.constraints.NotBlank;
-import lombok.*;
+import java.util.UUID;
 
 @Entity
 @Table(name = "direccion")
-@Getter
-@Setter
-@NoArgsConstructor
-@AllArgsConstructor
-@Builder
 public class Direccion {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.UUID)
-    @Column(name = "id_direccion", length = 36)
-    private String idDireccion;
+    @GeneratedValue(strategy = GenerationType.UUID) // O puedes usar un String generado manualmente
+    private String idDireccion; // Cambiado de UUID a String
 
-    @NotBlank(message = "El nombre es obligatorio")
-    @Column(name = "nombre", length = 255, nullable = false)
+    @Column(name = "nombre", nullable = false)
     private String nombre;
 
-    @Column(name = "descripcion_adicional", length = 255)
+    @Column(name = "descripcion_adicional")
     private String descripcionAdicional;
 
     @ManyToOne
     @JoinColumn(name = "depende_de")
     private Direccion dependeDe;
 
-    @Column(name = "fecha_creacion", updatable = false)
-    @Builder.Default
-    private java.time.LocalDateTime fechaCreacion = java.time.LocalDateTime.now();
+    // Constructores, getters y setters
+    public Direccion() {}
 
-    @PrePersist
-    protected void onCreate() {
-        this.fechaCreacion = java.time.LocalDateTime.now();
+    public String getIdDireccion() {
+        return idDireccion;
+    }
+
+    public void setIdDireccion(String idDireccion) {
+        this.idDireccion = idDireccion;
+    }
+
+    public String getNombre() {
+        return nombre;
+    }
+
+    public void setNombre(String nombre) {
+        this.nombre = nombre;
+    }
+
+    public String getDescripcionAdicional() {
+        return descripcionAdicional;
+    }
+
+    public void setDescripcionAdicional(String descripcionAdicional) {
+        this.descripcionAdicional = descripcionAdicional;
+    }
+
+    public Direccion getDependeDe() {
+        return dependeDe;
+    }
+
+    public void setDependeDe(Direccion dependeDe) {
+        this.dependeDe = dependeDe;
     }
 }
