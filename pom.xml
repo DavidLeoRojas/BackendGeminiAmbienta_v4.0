@@ -14,11 +14,9 @@
 	<name>gemini-ambiental</name>
 	<description>Backend para sistema Gemini Ambiental</description>
 	<properties>
-			<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-			<project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
-			<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-
 		<java.version>17</java.version>
+		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+		<project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
 	</properties>
 	<dependencies>
 		<!-- JWT -->
@@ -26,13 +24,6 @@
 			<groupId>io.jsonwebtoken</groupId>
 			<artifactId>jjwt-api</artifactId>
 			<version>0.11.5</version>
-		</dependency>
-		<!-- Driver PostgreSQL para Render -->
-		<dependency>
-			<groupId>org.postgresql</groupId>
-			<artifactId>postgresql</artifactId>
-			<version>42.7.3</version>
-			<scope>runtime</scope>
 		</dependency>
 		<dependency>
 			<groupId>io.jsonwebtoken</groupId>
@@ -44,6 +35,14 @@
 			<groupId>io.jsonwebtoken</groupId>
 			<artifactId>jjwt-jackson</artifactId>
 			<version>0.11.5</version>
+			<scope>runtime</scope>
+		</dependency>
+
+		<!-- Driver PostgreSQL para Render -->
+		<dependency>
+			<groupId>org.postgresql</groupId>
+			<artifactId>postgresql</artifactId>
+			<version>42.7.3</version>
 			<scope>runtime</scope>
 		</dependency>
 
@@ -64,12 +63,14 @@
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-validation</artifactId>
 		</dependency>
-		<!--dependency>
-			<groupId>mysql</groupId>
-			<artifactId>mysql-connector-java</artifactId>
-			<version>8.0.33</version> <Versión específica
+
+		<!-- H2 Database - Añadida para resolver el error de compilación -->
+		<dependency>
+			<groupId>com.h2database</groupId>
+			<artifactId>h2</artifactId>
 			<scope>runtime</scope>
-		</dependency!-->
+		</dependency>
+
 		<dependency>
 			<groupId>org.projectlombok</groupId>
 			<artifactId>lombok</artifactId>
