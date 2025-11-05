@@ -158,13 +158,17 @@ public class PersonaService implements UserDetailsService {
                 .map(this::convertToDTO)
                 .collect(Collectors.toList());
     }
-    public Optional<Persona> findByCorreo(String correo) {
-        return personaRepository.findByCorreo(correo);
-    }
+
     public Persona findByEmailAndDni(String email, String dni) {
         return personaRepository.findByCorreoAndDni(email, dni)
                 .orElseThrow(() -> new UsernameNotFoundException("Usuario no encontrado con email y dni"));
     }
+
+    // --- AÑADIR ESTE MÉTODO FALTANTE ---
+    public Optional<Persona> findByCorreo(String correo) {
+        return personaRepository.findByCorreo(correo);
+    }
+    // --- FIN DEL MÉTODO AÑADIDO ---
 
     private Persona convertToEntity(PersonaDTO dto) {
         Persona persona = new Persona();
