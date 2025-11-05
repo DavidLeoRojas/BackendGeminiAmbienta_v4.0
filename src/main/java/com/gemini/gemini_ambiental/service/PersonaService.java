@@ -10,7 +10,6 @@ import com.gemini.gemini_ambiental.repository.CargoEspecialidadRepository;
 import com.gemini.gemini_ambiental.dto.PersonaDTO;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Lazy;
-import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.userdetails.User;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
@@ -21,6 +20,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Optional;
+// import java.util.UUID; // Ya no necesitas importar UUID
 import java.util.stream.Collectors;
 
 @Service
@@ -45,9 +45,8 @@ public class PersonaService implements UserDetailsService {
         Persona persona = personaRepository.findByCorreo(email)
                 .orElseThrow(() -> new UsernameNotFoundException("Usuario no encontrado con correo: " + email));
 
-        // ✅ Validación de rol con AccessDeniedException
-        if (!"Empleado".equalsIgnoreCase(persona.getRol())) {
-            throw new AccessDeniedException("Solo los empleados pueden iniciar sesión");
+        if (!"Empleado".equals(persona.getRol())) {
+            throw new UsernameNotFoundException("Acceso denegado: Solo los empleados pueden iniciar sesión.");
         }
 
         return User.builder()
@@ -68,12 +67,11 @@ public class PersonaService implements UserDetailsService {
         }
 
         String dni = persona.getDni();
-        if (dni == null || dni.trim().isEmpty()) {
-            throw new RuntimeException("El DNI es obligatorio para generar la contraseña.");
+        String correo = persona.getCorreo();
+        if (dni == null || dni.trim().isEmpty() || correo == null || correo.trim().isEmpty()) {
+            throw new RuntimeException("El DNI y el correo son obligatorios para generar la contraseña.");
         }
-
-        // ✅ CORRECCIÓN: La contraseña es SOLO el DNI
-        String contrasenaPlana = dni;
+        String contrasenaPlana = dni + correo.toLowerCase();
         persona.setPassword(passwordEncoder.encode(contrasenaPlana));
 
         Persona savedPersona = personaRepository.save(persona);
@@ -109,7 +107,9 @@ public class PersonaService implements UserDetailsService {
         existingPersona.setRepresentanteLegal(personaDTO.getRepresentanteLegal());
         existingPersona.setNit(personaDTO.getNit());
 
+        // --- Corrección: No convertir String → UUID para dirección ---
         if (personaDTO.getIdDireccion() != null) {
+            // No necesitas convertir a UUID
             Direccion direccion = direccionRepository.findById(personaDTO.getIdDireccion())
                     .orElseThrow(() -> new ResourceNotFoundException("Dirección no encontrada con ID: " + personaDTO.getIdDireccion()));
             existingPersona.setDireccion(direccion);
@@ -117,7 +117,9 @@ public class PersonaService implements UserDetailsService {
             existingPersona.setDireccion(null);
         }
 
+        // --- Corrección: No convertir String → UUID para cargo ---
         if (personaDTO.getIdCargoEspecialidad() != null) {
+            // No necesitas convertir a UUID
             CargoEspecialidad cargo = cargoEspecialidadRepository.findById(personaDTO.getIdCargoEspecialidad())
                     .orElseThrow(() -> new ResourceNotFoundException("Cargo no encontrado con ID: " + personaDTO.getIdCargoEspecialidad()));
             existingPersona.setCargoEspecialidad(cargo);
@@ -156,9 +158,12 @@ public class PersonaService implements UserDetailsService {
                 .map(this::convertToDTO)
                 .collect(Collectors.toList());
     }
-
     public Optional<Persona> findByCorreo(String correo) {
         return personaRepository.findByCorreo(correo);
+    }
+    public Persona findByEmailAndDni(String email, String dni) {
+        return personaRepository.findByCorreoAndDni(email, dni)
+                .orElseThrow(() -> new UsernameNotFoundException("Usuario no encontrado con email y dni"));
     }
 
     private Persona convertToEntity(PersonaDTO dto) {
@@ -208,12 +213,15 @@ public class PersonaService implements UserDetailsService {
             persona.setRepresentanteLegal(null);
         }
 
+        // --- Corrección en convertToEntity también ---
         if (dto.getIdDireccion() != null) {
+            // No necesitas convertir a UUID
             Direccion direccion = direccionRepository.findById(dto.getIdDireccion()).orElse(null);
             persona.setDireccion(direccion);
         }
 
         if (dto.getIdCargoEspecialidad() != null) {
+            // No necesitas convertir a UUID
             CargoEspecialidad cargo = cargoEspecialidadRepository.findById(dto.getIdCargoEspecialidad()).orElse(null);
             persona.setCargoEspecialidad(cargo);
         }
@@ -234,11 +242,14 @@ public class PersonaService implements UserDetailsService {
         dto.setNit(persona.getNit());
         dto.setFechaCreacion(persona.getFechaCreacion());
 
+        // --- Corrección principal: No convertir UUID a String ---
         if (persona.getDireccion() != null) {
+            // El ID ya es String, no necesitas toString()
             dto.setIdDireccion(persona.getDireccion().getIdDireccion());
             dto.setNombreDireccion(persona.getDireccion().getNombre());
         }
         if (persona.getCargoEspecialidad() != null) {
+            // El ID ya es String, no necesitas toString()
             dto.setIdCargoEspecialidad(persona.getCargoEspecialidad().getIdCargoEspecialidad());
             dto.setNombreCargo(persona.getCargoEspecialidad().getNombre());
         }

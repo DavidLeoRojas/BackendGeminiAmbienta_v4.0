@@ -1,16 +1,17 @@
 package com.gemini.gemini_ambiental.entity;
 
 import jakarta.persistence.*;
-
 import java.time.LocalDateTime;
-import java.util.UUID;
 
 @Entity
 @Table(name = "cargo_especialidad")
 public class CargoEspecialidad {
 
+    // Cambiado de UUID a String
     @Id
-    @GeneratedValue(strategy = GenerationType.UUID) // O puedes usar un String generado manualmente
+    @GeneratedValue(strategy = GenerationType.UUID) // Si quieres que JPA genere el ID, sigue usando UUID aquí pero el campo será String
+    // O si la base de datos genera el ID como VARCHAR, usa GenerationType.IDENTITY o quita @GeneratedValue
+    // Si la base de datos lo maneja como string y no usa auto-incremento, quita @GeneratedValue
     private String idCargoEspecialidad;
 
     @Column(name = "nombre", nullable = false)
@@ -19,9 +20,8 @@ public class CargoEspecialidad {
     @Column(name = "descripcion")
     private String descripcion;
 
-    // Campo fechaCreacion
     @Column(name = "fecha_creacion")
-    private LocalDateTime fechaCreacion; // O Date, Timestamp, etc.
+    private LocalDateTime fechaCreacion;
 
     @ManyToOne
     @JoinColumn(name = "id_categoria_servicio")
@@ -30,7 +30,7 @@ public class CargoEspecialidad {
     // Constructores
     public CargoEspecialidad() {
         // Opcional: Establecer fecha de creación automáticamente al crear la instancia
-        // this.fechaCreacion = LocalDateTime.now(); // Si usas LocalDateTime
+        // this.fechaCreacion = LocalDateTime.now();
     }
 
     // Getters y Setters
@@ -58,12 +58,10 @@ public class CargoEspecialidad {
         this.descripcion = descripcion;
     }
 
-    // Getter para fechaCreacion
     public LocalDateTime getFechaCreacion() {
         return fechaCreacion;
     }
 
-    // Setter para fechaCreacion (opcional, dependiendo de si quieres permitir modificarla)
     public void setFechaCreacion(LocalDateTime fechaCreacion) {
         this.fechaCreacion = fechaCreacion;
     }
