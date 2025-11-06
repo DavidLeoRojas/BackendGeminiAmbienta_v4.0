@@ -33,19 +33,19 @@ public class AuthController {
     @PostMapping("/login")
     public ResponseEntity<?> createAuthenticationToken(@RequestBody AuthRequest authRequest) {
 
-        // Buscar persona por email
         Persona persona = personaService.findByCorreo(authRequest.getEmail())
                 .orElseThrow(() -> new UsernameNotFoundException("Correo no registrado"));
 
-        // ✅ Validar que sea EMPLEADO
         if (!persona.getRol().equalsIgnoreCase("EMPLEADO")) {
             return ResponseEntity.status(403).body("Acceso permitido solo para empleados");
         }
 
-        // ✅ Autenticar usando correo + DNI
         try {
             authenticationManager.authenticate(
-                    new UsernamePasswordAuthenticationToken(authRequest.getEmail(), authRequest.getPassword())
+                    new UsernamePasswordAuthenticationToken(
+                            authRequest.getEmail(),
+                            authRequest.getDni()
+                    )
             );
         } catch (BadCredentialsException e) {
             return ResponseEntity.status(401).body("DNI incorrecto");
@@ -57,19 +57,17 @@ public class AuthController {
         return ResponseEntity.ok(new AuthResponse(jwt, persona.getDni(), persona.getNombre()));
     }
 
-    // ==============================
-    // DTO REQUEST
-    // ==============================
     static class AuthRequest {
         private String email;
-        private String password;
+        private String dni;
 
         public String getEmail() { return email; }
         public void setEmail(String email) { this.email = email; }
 
-        public String getPassword() { return password; }
-        public void setPassword(String password) { this.password = password; }
+        public String getDni() { return dni; }
+        public void setDni(String dni) { this.dni = dni; }
     }
+
 
     // ==============================
     // DTO RESPONSE
