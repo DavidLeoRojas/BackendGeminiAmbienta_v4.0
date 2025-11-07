@@ -165,16 +165,21 @@ public class PersonaService implements UserDetailsService {
                 .collect(Collectors.toList());
     }
 
-    // ========== MÉTODOS ADICIONALES ==========
+    // ========== MÉTODOS ADICIONALES SIMPLIFICADOS ==========
 
     public List<PersonaDTO> getPersonasByRol(String rol) {
+        // ❌ ELIMINADO: personaRepository.findByTipoPersona() no existe
+        // Usamos filtro manual en su lugar
         return personaRepository.findByRol(rol).stream()
                 .map(this::convertToDTO)
                 .collect(Collectors.toList());
     }
 
     public List<PersonaDTO> getPersonasByTipo(String tipoPersona) {
-        return personaRepository.findByTipoPersona(tipoPersona).stream()
+        // ❌ ELIMINADO: personaRepository.findByTipoPersona() no existe
+        // Usamos filtro manual en su lugar
+        return personaRepository.findAll().stream()
+                .filter(p -> p.getTipoPersona().toString().equalsIgnoreCase(tipoPersona))
                 .map(this::convertToDTO)
                 .collect(Collectors.toList());
     }
