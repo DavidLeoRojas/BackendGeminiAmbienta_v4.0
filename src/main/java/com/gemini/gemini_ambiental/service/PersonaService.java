@@ -8,9 +8,9 @@ import com.gemini.gemini_ambiental.repository.PersonaRepository;
 import com.gemini.gemini_ambiental.repository.DireccionRepository;
 import com.gemini.gemini_ambiental.repository.CargoEspecialidadRepository;
 import com.gemini.gemini_ambiental.dto.PersonaDTO;
+import com.gemini.gemini_ambiental.security.PersonaDetails; // Asegúrate de importar tu clase UserDetails personalizada
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Lazy;
-import org.springframework.security.core.userdetails.User;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
@@ -20,12 +20,11 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Optional;
-// import java.util.UUID; // Ya no necesitas importar UUID
 import java.util.stream.Collectors;
 
 @Service
 @Transactional
-public class PersonaService  {
+public class PersonaService implements UserDetailsService { // <-- Implementar UserDetailsService
 
     @Autowired
     private PersonaRepository personaRepository;
@@ -40,7 +39,21 @@ public class PersonaService  {
     @Lazy
     private PasswordEncoder passwordEncoder;
 
+    // Método requerido por UserDetailsService
+    @Override
+    public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
+        Persona persona = personaRepository.findByCorreo(username)
+                .orElseThrow(() -> new UsernameNotFoundException("Usuario no encontrado con correo: " + username));
+        // Retorna una instancia de tu clase UserDetails personalizada
+        return new PersonaDetails(persona);
+    }
 
+    // Tu método existente findByCorreo, necesario para el JwtRequestFilter si lo usas de otra manera
+    public Optional<Persona> findByCorreo(String correo) {
+        return personaRepository.findByCorreo(correo);
+    }
+
+    // --- Métodos CRUD existentes (sin cambios en la lógica principal) ---
 
     public PersonaDTO createPersona(PersonaDTO personaDTO) {
         Persona persona = convertToEntity(personaDTO);
@@ -93,9 +106,7 @@ public class PersonaService  {
         existingPersona.setRepresentanteLegal(personaDTO.getRepresentanteLegal());
         existingPersona.setNit(personaDTO.getNit());
 
-        // --- Corrección: No convertir String → UUID para dirección ---
         if (personaDTO.getIdDireccion() != null) {
-            // No necesitas convertir a UUID
             Direccion direccion = direccionRepository.findById(personaDTO.getIdDireccion())
                     .orElseThrow(() -> new ResourceNotFoundException("Dirección no encontrada con ID: " + personaDTO.getIdDireccion()));
             existingPersona.setDireccion(direccion);
@@ -103,9 +114,7 @@ public class PersonaService  {
             existingPersona.setDireccion(null);
         }
 
-        // --- Corrección: No convertir String → UUID para cargo ---
         if (personaDTO.getIdCargoEspecialidad() != null) {
-            // No necesitas convertir a UUID
             CargoEspecialidad cargo = cargoEspecialidadRepository.findById(personaDTO.getIdCargoEspecialidad())
                     .orElseThrow(() -> new ResourceNotFoundException("Cargo no encontrado con ID: " + personaDTO.getIdCargoEspecialidad()));
             existingPersona.setCargoEspecialidad(cargo);
@@ -150,11 +159,7 @@ public class PersonaService  {
                 .orElseThrow(() -> new UsernameNotFoundException("Usuario no encontrado con email y dni"));
     }
 
-    // --- AÑADIR ESTE MÉTODO FALTANTE ---
-    public Optional<Persona> findByCorreo(String correo) {
-        return personaRepository.findByCorreo(correo);
-    }
-    // --- FIN DEL MÉTODO AÑADIDO ---
+    // --- Métodos de conversión (sin cambios) ---
 
     private Persona convertToEntity(PersonaDTO dto) {
         Persona persona = new Persona();
@@ -203,15 +208,12 @@ public class PersonaService  {
             persona.setRepresentanteLegal(null);
         }
 
-        // --- Corrección en convertToEntity también ---
         if (dto.getIdDireccion() != null) {
-            // No necesitas convertir a UUID
             Direccion direccion = direccionRepository.findById(dto.getIdDireccion()).orElse(null);
             persona.setDireccion(direccion);
         }
 
         if (dto.getIdCargoEspecialidad() != null) {
-            // No necesitas convertir a UUID
             CargoEspecialidad cargo = cargoEspecialidadRepository.findById(dto.getIdCargoEspecialidad()).orElse(null);
             persona.setCargoEspecialidad(cargo);
         }
@@ -232,14 +234,11 @@ public class PersonaService  {
         dto.setNit(persona.getNit());
         dto.setFechaCreacion(persona.getFechaCreacion());
 
-        // --- Corrección principal: No convertir UUID a String ---
         if (persona.getDireccion() != null) {
-            // El ID ya es String, no necesitas toString()
             dto.setIdDireccion(persona.getDireccion().getIdDireccion());
             dto.setNombreDireccion(persona.getDireccion().getNombre());
         }
         if (persona.getCargoEspecialidad() != null) {
-            // El ID ya es String, no necesitas toString()
             dto.setIdCargoEspecialidad(persona.getCargoEspecialidad().getIdCargoEspecialidad());
             dto.setNombreCargo(persona.getCargoEspecialidad().getNombre());
         }

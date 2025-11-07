@@ -20,7 +20,7 @@ import java.io.IOException;
 public class JwtRequestFilter extends OncePerRequestFilter {
 
     @Autowired
-    private PersonaService personaService;
+    private PersonaService personaService; // Asegúrate que este sea tu servicio personalizado
 
     @Autowired
     private JwtUtil jwtUtil;
@@ -50,19 +50,28 @@ public class JwtRequestFilter extends OncePerRequestFilter {
 
         // Una vez que obtenemos el token, validamos el usuario
         if (username != null && SecurityContextHolder.getContext().getAuthentication() == null) {
-            UserDetails userDetails = this.personaService.loadUserByUsername(username);
+            // Cambio crucial: usar findByCorreo en lugar de loadUserByUsername
+            com.gemini.gemini_ambiental.entity.Persona persona = this.personaService.findByCorreo(username).orElse(null);
 
-            // Si el token es válido, configuramos el contexto de seguridad
-            if (jwtUtil.validateToken(jwtToken, userDetails.getUsername())) {
-                UsernamePasswordAuthenticationToken usernamePasswordAuthenticationToken =
-                        new UsernamePasswordAuthenticationToken(
-                                userDetails,
-                                null,
-                                userDetails.getAuthorities()
-                        );
-                usernamePasswordAuthenticationToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
-                SecurityContextHolder.getContext().setAuthentication(usernamePasswordAuthenticationToken);
+            if (persona != null) {
+                // Crea manualmente un UserDetails si es necesario
+                // Asumiendo que tienes una clase como PersonaDetails implementando UserDetails
+                // que reciba una entidad Persona en su constructor.
+                com.gemini.gemini_ambiental.security.PersonaDetails userDetails = new com.gemini.gemini_ambiental.security.PersonaDetails(persona);
+
+                // Validar el token con el UserDetails personalizado
+                if (jwtUtil.validateToken(jwtToken, userDetails)) {
+                    UsernamePasswordAuthenticationToken usernamePasswordAuthenticationToken =
+                            new UsernamePasswordAuthenticationToken(
+                                    userDetails,
+                                    null,
+                                    userDetails.getAuthorities()
+                            );
+                    usernamePasswordAuthenticationToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
+                    SecurityContextHolder.getContext().setAuthentication(usernamePasswordAuthenticationToken);
+                }
             }
+            // Si persona es null, el usuario no existe, y no se autentica.
         }
         chain.doFilter(request, response);
     }
