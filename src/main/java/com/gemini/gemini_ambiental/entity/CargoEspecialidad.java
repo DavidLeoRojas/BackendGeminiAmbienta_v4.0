@@ -2,17 +2,16 @@ package com.gemini.gemini_ambiental.entity;
 
 import jakarta.persistence.*;
 import java.time.LocalDateTime;
+import java.util.UUID; // Asegúrate de importar UUID
 
 @Entity
 @Table(name = "cargo_especialidad")
 public class CargoEspecialidad {
 
-    // Cambiado de UUID a String
+    // Cambiado de String a UUID
     @Id
-    @GeneratedValue(strategy = GenerationType.UUID) // Si quieres que JPA genere el ID, sigue usando UUID aquí pero el campo será String
-    // O si la base de datos genera el ID como VARCHAR, usa GenerationType.IDENTITY o quita @GeneratedValue
-    // Si la base de datos lo maneja como string y no usa auto-incremento, quita @GeneratedValue
-    private String idCargoEspecialidad;
+    @GeneratedValue(strategy = GenerationType.UUID) // Esto sigue siendo correcto
+    private UUID idCargoEspecialidad; // ✅ CORRECTO: Tipo UUID
 
     @Column(name = "nombre", nullable = false)
     private String nombre;
@@ -23,7 +22,7 @@ public class CargoEspecialidad {
     @Column(name = "fecha_creacion")
     private LocalDateTime fechaCreacion;
 
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.LAZY) // Añadido FetchType.LAZY
     @JoinColumn(name = "id_categoria_servicio")
     private CategoriaServicio categoriaServicio;
 
@@ -34,11 +33,11 @@ public class CargoEspecialidad {
     }
 
     // Getters y Setters
-    public String getIdCargoEspecialidad() {
+    public UUID getIdCargoEspecialidad() {
         return idCargoEspecialidad;
     }
 
-    public void setIdCargoEspecialidad(String idCargoEspecialidad) {
+    public void setIdCargoEspecialidad(UUID idCargoEspecialidad) {
         this.idCargoEspecialidad = idCargoEspecialidad;
     }
 
