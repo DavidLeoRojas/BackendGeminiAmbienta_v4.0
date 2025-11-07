@@ -63,14 +63,14 @@ public class Persona {
     @JoinColumn(name = "id_cargo_especialidad")
     private CargoEspecialidad cargoEspecialidad;
 
-    @Column(name = "fecha_creacion", updatable = false)
-    @Builder.Default
-    private java.time.LocalDateTime fechaCreacion = java.time.LocalDateTime.now();
+    //@Column(name = "fecha_creacion", updatable = false)
+    //@Builder.Default
+    //private java.time.LocalDateTime fechaCreacion = java.time.LocalDateTime.now();
 
-    @PrePersist
-    protected void onCreate() {
-        this.fechaCreacion = java.time.LocalDateTime.now();
-    }
+    //@PrePersist
+   // protected void onCreate() {
+     //   this.fechaCreacion = java.time.LocalDateTime.now();
+    //}
 
     public enum TipoPersona {
         Natural, Juridica

@@ -233,7 +233,7 @@ public class PersonaService implements UserDetailsService { // <-- Implementar U
         dto.setTipoPersona(persona.getTipoPersona().toString());
         dto.setRepresentanteLegal(persona.getRepresentanteLegal());
         dto.setNit(persona.getNit());
-        dto.setFechaCreacion(persona.getFechaCreacion());
+
 
         if (persona.getDireccion() != null) {
             dto.setIdDireccion(persona.getDireccion().getIdDireccion());
