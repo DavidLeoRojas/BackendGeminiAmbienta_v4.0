@@ -2,16 +2,20 @@ package com.gemini.gemini_ambiental.entity;
 
 import jakarta.persistence.*;
 import java.time.LocalDateTime;
-import java.util.UUID; // Asegúrate de importar UUID
+// Importa las anotaciones de Hibernate para el tipo JDBC
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 
 @Entity
 @Table(name = "cargo_especialidad")
 public class CargoEspecialidad {
 
-    // Cambiado de String a UUID
+    // Cambiado de UUID a String, pero se mapea como UUID en BD
     @Id
-    @GeneratedValue(strategy = GenerationType.UUID) // Esto sigue siendo correcto
-    private UUID idCargoEspecialidad; // ✅ CORRECTO: Tipo UUID
+    // @GeneratedValue(strategy = GenerationType.UUID) // Comentado si lo defines manualmente o la BD lo genera
+    @JdbcTypeCode(SqlTypes.UUID) // <-- Añade esta anotación
+    @Column(name = "id_cargo_especialidad", updatable = false, nullable = false, columnDefinition = "uuid") // Clarifica el tipo en BD
+    private String idCargoEspecialidad; // ✅ Tipo String en Java
 
     @Column(name = "nombre", nullable = false)
     private String nombre;
@@ -22,22 +26,19 @@ public class CargoEspecialidad {
     @Column(name = "fecha_creacion")
     private LocalDateTime fechaCreacion;
 
-    @ManyToOne(fetch = FetchType.LAZY) // Añadido FetchType.LAZY
+    @ManyToOne(fetch = FetchType.LAZY) // Añadido fetch = FetchType.LAZY
     @JoinColumn(name = "id_categoria_servicio")
     private CategoriaServicio categoriaServicio;
 
-    // Constructores
+    // Constructores, Getters y Setters (manteniendo idCargoEspecialidad como String)
     public CargoEspecialidad() {
-        // Opcional: Establecer fecha de creación automáticamente al crear la instancia
-        // this.fechaCreacion = LocalDateTime.now();
     }
 
-    // Getters y Setters
-    public UUID getIdCargoEspecialidad() {
+    public String getIdCargoEspecialidad() {
         return idCargoEspecialidad;
     }
 
-    public void setIdCargoEspecialidad(UUID idCargoEspecialidad) {
+    public void setIdCargoEspecialidad(String idCargoEspecialidad) {
         this.idCargoEspecialidad = idCargoEspecialidad;
     }
 

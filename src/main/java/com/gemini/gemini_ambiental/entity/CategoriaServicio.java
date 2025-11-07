@@ -1,10 +1,11 @@
+// En CategoriaServicio.java
 package com.gemini.gemini_ambiental.entity;
 
 import jakarta.persistence.*;
 import lombok.*;
-
-// No necesitas importar LocalDateTime si no lo usas, pero lo dejo por si acaso
-import java.time.LocalDateTime;
+// Importa las anotaciones de Hibernate para el tipo JDBC
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 
 @Entity
 @Table(name = "categoria_servicio")
@@ -16,15 +17,13 @@ import java.time.LocalDateTime;
 public class CategoriaServicio {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.UUID)
-    @Column(name = "id_categoria_servicio", length = 36)
-    private String idCategoriaServicio;
+    @JdbcTypeCode(SqlTypes.UUID) // <-- Añade esta anotación si id_categoria_servicio es UUID en BD
+    @Column(name = "id_categoria_servicio", length = 36, columnDefinition = "uuid") // Clarifica el tipo en BD
+    private String idCategoriaServicio; // ✅ Tipo String en Java
 
     @Column(name = "nombre", nullable = false, length = 255)
     private String nombre;
 
     @Column(name = "descripcion", columnDefinition = "TEXT")
     private String descripcion;
-
-
 }
