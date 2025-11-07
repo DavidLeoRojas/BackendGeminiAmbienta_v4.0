@@ -21,9 +21,8 @@ public class WebSecurityConfig {
                 .csrf(csrf -> csrf.disable())
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/api/auth/login").permitAll()
-                        .requestMatchers("/api/auth/**").permitAll() // Permite todos los endpoints de auth
-                        .requestMatchers("/error").permitAll() // Permite acceso a endpoints de error
+                        .requestMatchers("/api/auth/**").permitAll() // ✅ Permitir TODOS los endpoints de auth
+                        .requestMatchers("/error").permitAll()
                         .anyRequest().authenticated()
                 )
                 .addFilterBefore(jwtRequestFilter, UsernamePasswordAuthenticationFilter.class);

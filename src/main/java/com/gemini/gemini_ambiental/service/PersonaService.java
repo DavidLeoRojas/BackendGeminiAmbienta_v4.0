@@ -26,6 +26,7 @@ import java.util.stream.Collectors;
 @Transactional
 public class PersonaService implements UserDetailsService { // <-- Implementar UserDetailsService
 
+
     @Autowired
     private PersonaRepository personaRepository;
 
