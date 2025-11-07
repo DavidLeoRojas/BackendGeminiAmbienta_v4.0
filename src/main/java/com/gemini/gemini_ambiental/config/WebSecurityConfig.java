@@ -32,13 +32,15 @@ public class WebSecurityConfig {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration config = new CorsConfiguration();
-        config.setAllowedOrigins(Arrays.asList(
-                "http://localhost:5500",
-                "https://davidleorojas.github.io" // Quité el espacio extra
+        // Usar allowedOriginPatterns en lugar de allowedOrigins
+        config.setAllowedOriginPatterns(Arrays.asList(
+                "http://localhost:[*]", // Permite cualquier puerto en localhost
+                "https://*.github.io"   // Permite subdominios de github.io
+                // Agrega otros patrones según sea necesario
         ));
-        config.setAllowCredentials(true);
-        config.addAllowedHeader("*");
-        config.addAllowedMethod("*");
+        config.setAllowCredentials(true); // Permitir credenciales
+        config.addAllowedHeader("*");     // Permitir todos los headers
+        config.addAllowedMethod("*");     // Permitir todos los métodos HTTP
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", config);
