@@ -165,6 +165,36 @@ public class PersonaService implements UserDetailsService {
                 .collect(Collectors.toList());
     }
 
+    // ========== MÉTODOS ADICIONALES ==========
+
+    public List<PersonaDTO> getPersonasByRol(String rol) {
+        return personaRepository.findByRol(rol).stream()
+                .map(this::convertToDTO)
+                .collect(Collectors.toList());
+    }
+
+    public List<PersonaDTO> getPersonasByTipo(String tipoPersona) {
+        return personaRepository.findByTipoPersona(tipoPersona).stream()
+                .map(this::convertToDTO)
+                .collect(Collectors.toList());
+    }
+
+    public boolean existsByDni(String dni) {
+        return personaRepository.findByDni(dni).isPresent();
+    }
+
+    public boolean existsByCorreo(String correo) {
+        return personaRepository.findByCorreo(correo).isPresent();
+    }
+
+    public Long countClientes() {
+        return personaRepository.countClientes();
+    }
+
+    public Long countEmpleados() {
+        return personaRepository.countEmpleados();
+    }
+
     // ========== MÉTODOS DE CONVERSIÓN ==========
 
     private Persona convertToEntity(PersonaDTO dto) {
@@ -263,35 +293,5 @@ public class PersonaService implements UserDetailsService {
         }
 
         return dto;
-    }
-
-    // ========== MÉTODOS ADICIONALES ==========
-
-    public List<PersonaDTO> getPersonasByRol(String rol) {
-        return personaRepository.findByRol(rol).stream()
-                .map(this::convertToDTO)
-                .collect(Collectors.toList());
-    }
-
-    public List<PersonaDTO> getPersonasByTipo(String tipoPersona) {
-        return personaRepository.findByTipoPersona(tipoPersona).stream()
-                .map(this::convertToDTO)
-                .collect(Collectors.toList());
-    }
-
-    public boolean existsByDni(String dni) {
-        return personaRepository.findByDni(dni).isPresent();
-    }
-
-    public boolean existsByCorreo(String correo) {
-        return personaRepository.findByCorreo(correo).isPresent();
-    }
-
-    public Long countClientes() {
-        return personaRepository.countClientes();
-    }
-
-    public Long countEmpleados() {
-        return personaRepository.countEmpleados();
     }
 }
