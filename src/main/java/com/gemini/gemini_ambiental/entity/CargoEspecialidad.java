@@ -23,7 +23,7 @@ public class CargoEspecialidad {
     @Column(name = "fecha_creacion")
     private LocalDateTime fechaCreacion;
 
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "id_categoria_servicio")
     private CategoriaServicio categoriaServicio;
 
