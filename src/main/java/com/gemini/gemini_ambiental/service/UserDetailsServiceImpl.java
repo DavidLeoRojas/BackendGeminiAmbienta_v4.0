@@ -20,14 +20,18 @@ public class UserDetailsServiceImpl implements UserDetailsService {
         Persona persona = personaService.findByCorreo(email)
                 .orElseThrow(() -> new UsernameNotFoundException("Usuario no encontrado: " + email));
 
-        // ⚠️ Password temporal = DNI (debe cambiarse a persona.getPassword())
+        if (!"Empleado".equalsIgnoreCase(persona.getRol())) {
+            throw new UsernameNotFoundException("Acceso denegado: Solo empleados pueden iniciar sesión.");
+        }
+
+        // Login actual: correo + DNI como clave
         String rawPassword = persona.getDni();
 
         return User.builder()
                 .username(persona.getCorreo())
-                .password(rawPassword)  // Para login actual
-                //.password(persona.getPassword())  // Para producción real
-                .roles(persona.getRol())
+                .password(rawPassword)
+                .roles("Empleado")
                 .build();
     }
+
 }

@@ -25,7 +25,7 @@ import java.util.stream.Collectors;
 
 @Service
 @Transactional
-public class PersonaService implements UserDetailsService {
+public class PersonaService  {
 
     @Autowired
     private PersonaRepository personaRepository;
@@ -40,21 +40,7 @@ public class PersonaService implements UserDetailsService {
     @Lazy
     private PasswordEncoder passwordEncoder;
 
-    @Override
-    public UserDetails loadUserByUsername(String email) throws UsernameNotFoundException {
-        Persona persona = personaRepository.findByCorreo(email)
-                .orElseThrow(() -> new UsernameNotFoundException("Usuario no encontrado con correo: " + email));
 
-        if (!"Empleado".equals(persona.getRol())) {
-            throw new UsernameNotFoundException("Acceso denegado: Solo los empleados pueden iniciar sesión.");
-        }
-
-        return User.builder()
-                .username(persona.getCorreo())
-                .password(persona.getPassword())
-                .authorities("ROLE_Empleado")
-                .build();
-    }
 
     public PersonaDTO createPersona(PersonaDTO personaDTO) {
         Persona persona = convertToEntity(personaDTO);

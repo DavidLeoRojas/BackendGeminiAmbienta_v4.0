@@ -4,6 +4,7 @@ import com.gemini.gemini_ambiental.config.JwtUtil;
 import com.gemini.gemini_ambiental.entity.Persona;
 import com.gemini.gemini_ambiental.service.PersonaService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.BadCredentialsException;
@@ -20,7 +21,9 @@ public class AuthController {
     private AuthenticationManager authenticationManager;
 
     @Autowired
+    @Qualifier("userDetailsServiceImpl")
     private UserDetailsService userDetailsService;
+
 
     @Autowired
     private PersonaService personaService;
