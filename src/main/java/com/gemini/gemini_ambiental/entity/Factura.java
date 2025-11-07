@@ -20,7 +20,6 @@ import java.util.List;
 public class Factura {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.UUID)
     @Column(name = "id_factura", length = 36)
     private String idFactura;
 

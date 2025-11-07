@@ -17,7 +17,6 @@ import java.time.LocalDateTime;
 public class Producto {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.UUID)
     @Column(name = "id_producto", length = 36)
     private String idProducto;
 
