@@ -20,7 +20,7 @@ import java.io.IOException;
 public class JwtRequestFilter extends OncePerRequestFilter {
 
     @Autowired
-    private PersonaService personaService; // Asegúrate que este sea tu servicio personalizado
+    private PersonaService personaService;
 
     @Autowired
     private JwtUtil jwtUtil;
@@ -50,17 +50,15 @@ public class JwtRequestFilter extends OncePerRequestFilter {
 
         // Una vez que obtenemos el token, validamos el usuario
         if (username != null && SecurityContextHolder.getContext().getAuthentication() == null) {
-            // Cambio crucial: usar findByCorreo en lugar de loadUserByUsername
+            // Buscar la entidad Persona directamente
             com.gemini.gemini_ambiental.entity.Persona persona = this.personaService.findByCorreo(username).orElse(null);
 
             if (persona != null) {
-                // Crea manualmente un UserDetails si es necesario
-                // Asumiendo que tienes una clase como PersonaDetails implementando UserDetails
-                // que reciba una entidad Persona en su constructor.
+                // Crear PersonaDetails a partir de la entidad Persona
                 com.gemini.gemini_ambiental.security.PersonaDetails userDetails = new com.gemini.gemini_ambiental.security.PersonaDetails(persona);
 
-                // Validar el token con el UserDetails personalizado
-                if (jwtUtil.validateToken(jwtToken, userDetails)) {
+                // Validar el token usando el username de userDetails
+                if (jwtUtil.validateToken(jwtToken, userDetails.getUsername())) { // <-- CORREGIDO AQUÍ
                     UsernamePasswordAuthenticationToken usernamePasswordAuthenticationToken =
                             new UsernamePasswordAuthenticationToken(
                                     userDetails,
