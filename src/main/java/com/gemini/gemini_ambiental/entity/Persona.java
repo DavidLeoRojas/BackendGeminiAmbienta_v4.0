@@ -55,6 +55,18 @@ public class Persona {
     @Column(name = "password", length = 255)
     private String password;
 
+    // ✅ COMENTADO TEMPORALMENTE - QUITA EL ERROR
+    /*
+    @Column(name = "fecha_creacion", updatable = false)
+    @Builder.Default
+    private LocalDateTime fechaCreacion = LocalDateTime.now();
+
+    @PrePersist
+    protected void onCreate() {
+        this.fechaCreacion = LocalDateTime.now();
+    }
+    */
+
     @ManyToOne
     @JoinColumn(name = "id_direccion")
     private Direccion direccion;
@@ -62,15 +74,6 @@ public class Persona {
     @ManyToOne
     @JoinColumn(name = "id_cargo_especialidad")
     private CargoEspecialidad cargoEspecialidad;
-
-    //@Column(name = "fecha_creacion", updatable = false)
-    //@Builder.Default
-    //private java.time.LocalDateTime fechaCreacion = java.time.LocalDateTime.now();
-
-    //@PrePersist
-   // protected void onCreate() {
-     //   this.fechaCreacion = java.time.LocalDateTime.now();
-    //}
 
     public enum TipoPersona {
         Natural, Juridica

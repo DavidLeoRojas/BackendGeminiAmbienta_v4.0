@@ -10,7 +10,7 @@ import java.util.List;
 import java.util.Optional;
 
 @Repository
-public interface PersonaRepository extends JpaRepository<Persona, String> { // âœ… String como tipo de ID
+public interface PersonaRepository extends JpaRepository<Persona, String> {
 
     Optional<Persona> findByDni(String dni);
 
@@ -22,8 +22,6 @@ public interface PersonaRepository extends JpaRepository<Persona, String> { // â
     List<Persona> findByNombreContainingIgnoreCase(String nombre);
 
     List<Persona> findByRol(String rol);
-
-    List<Persona> findByTipoPersona(String tipoPersona);
 
     @Query("SELECT p FROM Persona p WHERE p.correo LIKE %:search% OR p.nombre LIKE %:search% OR p.dni LIKE %:search%")
     List<Persona> searchByTerm(@Param("search") String search);

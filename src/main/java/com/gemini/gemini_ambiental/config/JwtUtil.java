@@ -16,38 +16,31 @@ import java.util.function.Function;
 @Component
 public class JwtUtil {
 
-    // ✅ Mejor: Usar @Value para cargar desde variables de entorno
-    @Value("${jwt.secret:my_default_secret_key_for_development_only_change_in_production}")
+    @Value("${jwt.secret:bXlfc2VjcmV0X2tleV9mb3JfaHR0cF9iYXNpY19hdXRoX2FwcGxpY2F0aW9uX2Zvcl9zZXJ2aWNlX3VzZXJzX2FjY2Vzcw==}")
     private String SECRET_KEY;
 
-    // ✅ Tiempo de expiración configurable (10 horas por defecto)
     @Value("${jwt.expiration:36000000}")
     private long EXPIRATION_TIME;
 
     private Key getSignKey() {
         try {
-            // ✅ Asegurar que la clave tenga al menos 256 bits (32 bytes)
             byte[] keyBytes;
 
             if (SECRET_KEY.length() < 32) {
-                // Si es muy corta, extenderla
                 keyBytes = new byte[32];
                 byte[] originalBytes = SECRET_KEY.getBytes();
                 System.arraycopy(originalBytes, 0, keyBytes, 0, Math.min(originalBytes.length, 32));
             } else {
-                // Decodificar Base64 o usar directamente como bytes
                 try {
                     keyBytes = java.util.Base64.getDecoder().decode(SECRET_KEY);
                 } catch (IllegalArgumentException e) {
-                    // Si no es Base64 válido, usar como string normal
                     keyBytes = SECRET_KEY.getBytes();
                 }
             }
 
             return Keys.hmacShaKeyFor(keyBytes);
         } catch (Exception e) {
-            // ✅ Fallback: generar una clave automáticamente
-            System.err.println("Error con la clave JWT, generando una automáticamente: " + e.getMessage());
+            System.err.println("Error con la clave JWT, generando automáticamente: " + e.getMessage());
             return Keys.secretKeyFor(SignatureAlgorithm.HS256);
         }
     }
@@ -82,8 +75,8 @@ public class JwtUtil {
         try {
             return extractExpiration(token).before(new Date());
         } catch (Exception e) {
-            System.err.println("Error verificando expiración del token: " + e.getMessage());
-            return true; // Si hay error, considerar como expirado
+            System.err.println("Error verificando expiración: " + e.getMessage());
+            return true;
         }
     }
 
@@ -114,7 +107,6 @@ public class JwtUtil {
         }
     }
 
-    // ✅ Método adicional para validar token sin username (útil para el filter)
     public Boolean validateToken(String token) {
         try {
             final String username = extractUsername(token);

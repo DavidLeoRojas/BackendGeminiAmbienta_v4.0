@@ -8,7 +8,7 @@ import com.gemini.gemini_ambiental.repository.PersonaRepository;
 import com.gemini.gemini_ambiental.repository.DireccionRepository;
 import com.gemini.gemini_ambiental.repository.CargoEspecialidadRepository;
 import com.gemini.gemini_ambiental.dto.PersonaDTO;
-import com.gemini.gemini_ambiental.security.PersonaDetails; // Asegúrate de importar tu clase UserDetails personalizada
+import com.gemini.gemini_ambiental.security.PersonaDetails;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -24,8 +24,7 @@ import java.util.stream.Collectors;
 
 @Service
 @Transactional
-public class PersonaService implements UserDetailsService { // <-- Implementar UserDetailsService
-
+public class PersonaService implements UserDetailsService {
 
     @Autowired
     private PersonaRepository personaRepository;
@@ -40,22 +39,18 @@ public class PersonaService implements UserDetailsService { // <-- Implementar U
     @Lazy
     private PasswordEncoder passwordEncoder;
 
-    // Método requerido por UserDetailsService
     @Override
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
         Persona persona = personaRepository.findByCorreo(username)
                 .orElseThrow(() -> new UsernameNotFoundException("Usuario no encontrado con correo: " + username));
-        // Retorna una instancia de tu clase UserDetails personalizada
         return new PersonaDetails(persona);
     }
 
-    // Tu método existente findByCorreo, necesario para el JwtRequestFilter si lo usas de otra manera
     public Optional<Persona> findByCorreo(String correo) {
         return personaRepository.findByCorreo(correo);
     }
 
-    // --- Métodos CRUD existentes (sin cambios en la lógica principal) ---
-
+    // Solo métodos esenciales para login
     public PersonaDTO createPersona(PersonaDTO personaDTO) {
         Persona persona = convertToEntity(personaDTO);
 
@@ -77,90 +72,6 @@ public class PersonaService implements UserDetailsService { // <-- Implementar U
         Persona savedPersona = personaRepository.save(persona);
         return convertToDTO(savedPersona);
     }
-
-    public PersonaDTO updatePersona(String dni, PersonaDTO personaDTO) {
-        Persona existingPersona = personaRepository.findByDni(dni)
-                .orElseThrow(() -> new ResourceNotFoundException("Persona no encontrada con DNI: " + dni));
-
-        if (personaDTO.getCorreo() != null && !personaDTO.getCorreo().equals(existingPersona.getCorreo())) {
-            personaRepository.findByCorreo(personaDTO.getCorreo())
-                    .ifPresent(existing -> {
-                        throw new RuntimeException("Ya existe una persona con este correo electrónico");
-                    });
-        }
-
-        existingPersona.setNombre(personaDTO.getNombre());
-        existingPersona.setTelefono(personaDTO.getTelefono());
-        existingPersona.setCorreo(personaDTO.getCorreo());
-        existingPersona.setRol(personaDTO.getRol());
-
-        String tipoPersonaStr = personaDTO.getTipoPersona();
-        if (tipoPersonaStr == null || tipoPersonaStr.trim().isEmpty()) {
-            existingPersona.setTipoPersona(Persona.TipoPersona.Natural);
-        } else {
-            try {
-                existingPersona.setTipoPersona(Persona.TipoPersona.valueOf(tipoPersonaStr));
-            } catch (IllegalArgumentException e) {
-                existingPersona.setTipoPersona(Persona.TipoPersona.Natural);
-            }
-        }
-        existingPersona.setRepresentanteLegal(personaDTO.getRepresentanteLegal());
-        existingPersona.setNit(personaDTO.getNit());
-
-        if (personaDTO.getIdDireccion() != null) {
-            Direccion direccion = direccionRepository.findById(personaDTO.getIdDireccion())
-                    .orElseThrow(() -> new ResourceNotFoundException("Dirección no encontrada con ID: " + personaDTO.getIdDireccion()));
-            existingPersona.setDireccion(direccion);
-        } else {
-            existingPersona.setDireccion(null);
-        }
-
-        if (personaDTO.getIdCargoEspecialidad() != null) {
-            CargoEspecialidad cargo = cargoEspecialidadRepository.findById(personaDTO.getIdCargoEspecialidad())
-                    .orElseThrow(() -> new ResourceNotFoundException("Cargo no encontrado con ID: " + personaDTO.getIdCargoEspecialidad()));
-            existingPersona.setCargoEspecialidad(cargo);
-        } else {
-            existingPersona.setCargoEspecialidad(null);
-        }
-
-        Persona updatedPersona = personaRepository.save(existingPersona);
-        return convertToDTO(updatedPersona);
-    }
-
-    public void deletePersona(String dni) {
-        Persona persona = personaRepository.findByDni(dni)
-                .orElseThrow(() -> new ResourceNotFoundException("Persona no encontrada con DNI: " + dni));
-        personaRepository.delete(persona);
-    }
-
-    public PersonaDTO getPersonaByDni(String dni) {
-        Persona persona = personaRepository.findByDni(dni)
-                .orElseThrow(() -> new ResourceNotFoundException("Persona no encontrada con DNI: " + dni));
-        return convertToDTO(persona);
-    }
-
-    public List<PersonaDTO> getAllPersonas() {
-        return personaRepository.findAll().stream()
-                .map(this::convertToDTO)
-                .collect(Collectors.toList());
-    }
-
-    public List<PersonaDTO> searchPersonas(String searchTerm) {
-        return personaRepository.findAll().stream()
-                .filter(p -> searchTerm == null || searchTerm.isEmpty() ||
-                        p.getNombre().toLowerCase().contains(searchTerm.toLowerCase()) ||
-                        p.getDni().toLowerCase().contains(searchTerm.toLowerCase()) ||
-                        (p.getCorreo() != null && p.getCorreo().toLowerCase().contains(searchTerm.toLowerCase())))
-                .map(this::convertToDTO)
-                .collect(Collectors.toList());
-    }
-
-    public Persona findByEmailAndDni(String email, String dni) {
-        return personaRepository.findByCorreoAndDni(email, dni)
-                .orElseThrow(() -> new UsernameNotFoundException("Usuario no encontrado con email y dni"));
-    }
-
-    // --- Métodos de conversión (sin cambios) ---
 
     private Persona convertToEntity(PersonaDTO dto) {
         Persona persona = new Persona();
@@ -234,6 +145,7 @@ public class PersonaService implements UserDetailsService { // <-- Implementar U
         dto.setRepresentanteLegal(persona.getRepresentanteLegal());
         dto.setNit(persona.getNit());
 
+        // ❌ ELIMINADO: dto.setFechaCreacion(persona.getFechaCreacion());
 
         if (persona.getDireccion() != null) {
             dto.setIdDireccion(persona.getDireccion().getIdDireccion());

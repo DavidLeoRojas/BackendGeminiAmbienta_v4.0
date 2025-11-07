@@ -9,12 +9,12 @@ import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
+
 @Component
 public class JwtRequestFilter extends OncePerRequestFilter {
 
@@ -28,7 +28,6 @@ public class JwtRequestFilter extends OncePerRequestFilter {
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain chain)
             throws ServletException, IOException {
 
-        // ✅ EXCLUIR ENDPOINTS PÚBLICOS
         String path = request.getServletPath();
         if (isPublicEndpoint(path)) {
             chain.doFilter(request, response);
@@ -39,13 +38,11 @@ public class JwtRequestFilter extends OncePerRequestFilter {
         String username = null;
         String jwtToken = null;
 
-        // JWT Token está en el formato "Bearer token"
         if (requestTokenHeader != null && requestTokenHeader.startsWith("Bearer ")) {
             jwtToken = requestTokenHeader.substring(7);
             try {
                 username = jwtUtil.extractUsername(jwtToken);
 
-                // ✅ Validación adicional del token
                 if (!jwtUtil.validateToken(jwtToken)) {
                     logger.warn("Token JWT inválido o expirado");
                     sendErrorResponse(response, HttpServletResponse.SC_UNAUTHORIZED, "Token inválido o expirado");
@@ -62,22 +59,18 @@ public class JwtRequestFilter extends OncePerRequestFilter {
             return;
         }
 
-        // Validar usuario en la base de datos
         if (username != null && SecurityContextHolder.getContext().getAuthentication() == null) {
-            com.gemini.gemini_ambiental.entity.Persona persona = this.personaService.findByCorreo(username).orElse(null);
+            var persona = this.personaService.findByCorreo(username).orElse(null);
 
             if (persona != null) {
-                com.gemini.gemini_ambiental.security.PersonaDetails userDetails =
-                        new com.gemini.gemini_ambiental.security.PersonaDetails(persona);
+                var userDetails = new com.gemini.gemini_ambiental.security.PersonaDetails(persona);
 
-                // ✅ Usar validación mejorada
                 if (jwtUtil.validateToken(jwtToken, userDetails.getUsername())) {
-                    UsernamePasswordAuthenticationToken authToken =
-                            new UsernamePasswordAuthenticationToken(
-                                    userDetails,
-                                    null,
-                                    userDetails.getAuthorities()
-                            );
+                    var authToken = new UsernamePasswordAuthenticationToken(
+                            userDetails,
+                            null,
+                            userDetails.getAuthorities()
+                    );
                     authToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
                     SecurityContextHolder.getContext().setAuthentication(authToken);
                 }
@@ -99,6 +92,7 @@ public class JwtRequestFilter extends OncePerRequestFilter {
     private void sendErrorResponse(HttpServletResponse response, int status, String message) throws IOException {
         response.setStatus(status);
         response.setContentType("application/json");
+        response.setCharacterEncoding("UTF-8");
         response.getWriter().write("{\"error\": \"" + message + "\"}");
     }
 }

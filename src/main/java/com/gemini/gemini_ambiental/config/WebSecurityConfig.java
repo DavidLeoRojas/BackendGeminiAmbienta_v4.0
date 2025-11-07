@@ -10,6 +10,7 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
+
 import java.util.Arrays;
 
 @Configuration
@@ -21,7 +22,7 @@ public class WebSecurityConfig {
                 .csrf(csrf -> csrf.disable())
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/api/auth/**").permitAll() // ✅ Permitir TODOS los endpoints de auth
+                        .requestMatchers("/api/auth/**").permitAll()
                         .requestMatchers("/error").permitAll()
                         .anyRequest().authenticated()
                 )
@@ -34,18 +35,16 @@ public class WebSecurityConfig {
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration config = new CorsConfiguration();
 
-        // Configuración corregida de CORS
         config.setAllowedOriginPatterns(Arrays.asList(
                 "http://localhost:*",
                 "https://*.github.io",
                 "https://*.onrender.com",
-                "https://davidleorojas.github.io",
-                "https://davidleorojas.github.io/MockupsPublicoTC/"// Permite subdominios de github.io
+                "https://davidleorojas.github.io"
         ));
         config.setAllowCredentials(true);
         config.setAllowedHeaders(Arrays.asList("*"));
         config.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"));
-        config.setExposedHeaders(Arrays.asList("Authorization", "Content-Type")); // Headers expuestos
+        config.setExposedHeaders(Arrays.asList("Authorization", "Content-Type"));
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", config);
@@ -57,6 +56,3 @@ public class WebSecurityConfig {
         return authConfig.getAuthenticationManager();
     }
 }
-
-
-
