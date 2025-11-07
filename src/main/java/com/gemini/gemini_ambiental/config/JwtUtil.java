@@ -3,10 +3,11 @@ package com.gemini.gemini_ambiental.config;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
-import io.jsonwebtoken.security.Keys; // Importar la clase Keys de jjwt-impl o jjwt-api
+import io.jsonwebtoken.security.Keys;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
-import java.security.Key; // Importar la clase Key estándar de Java
+import java.security.Key;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
@@ -15,15 +16,40 @@ import java.util.function.Function;
 @Component
 public class JwtUtil {
 
-    // ✅ Clave secreta en formato Base64 seguro
-    // Puedes generar una nueva con: Base64.getEncoder().encodeToString(new byte[32]);
-    private final String SECRET_KEY = "bXlfc2VjcmV0X2tleV9mb3JfaHR0cF9iYXNpY19hdXRoX2FwcGxpY2F0aW9uX2Zvcl9zZXJ2aWNlX3VzZXJzX2FjY2Vzcw=="; // Ejemplo, cámbiala por una generada tú mismo
+    // ✅ Mejor: Usar @Value para cargar desde variables de entorno
+    @Value("${jwt.secret:my_default_secret_key_for_development_only_change_in_production}")
+    private String SECRET_KEY;
 
-    // Método para obtener la clave de firma como un objeto Key de Java
+    // ✅ Tiempo de expiración configurable (10 horas por defecto)
+    @Value("${jwt.expiration:36000000}")
+    private long EXPIRATION_TIME;
+
     private Key getSignKey() {
-        // Decodificar la clave Base64 y crear una clave HMAC
-        byte[] keyBytes = java.util.Base64.getDecoder().decode(SECRET_KEY);
-        return Keys.hmacShaKeyFor(keyBytes);
+        try {
+            // ✅ Asegurar que la clave tenga al menos 256 bits (32 bytes)
+            byte[] keyBytes;
+
+            if (SECRET_KEY.length() < 32) {
+                // Si es muy corta, extenderla
+                keyBytes = new byte[32];
+                byte[] originalBytes = SECRET_KEY.getBytes();
+                System.arraycopy(originalBytes, 0, keyBytes, 0, Math.min(originalBytes.length, 32));
+            } else {
+                // Decodificar Base64 o usar directamente como bytes
+                try {
+                    keyBytes = java.util.Base64.getDecoder().decode(SECRET_KEY);
+                } catch (IllegalArgumentException e) {
+                    // Si no es Base64 válido, usar como string normal
+                    keyBytes = SECRET_KEY.getBytes();
+                }
+            }
+
+            return Keys.hmacShaKeyFor(keyBytes);
+        } catch (Exception e) {
+            // ✅ Fallback: generar una clave automáticamente
+            System.err.println("Error con la clave JWT, generando una automáticamente: " + e.getMessage());
+            return Keys.secretKeyFor(SignatureAlgorithm.HS256);
+        }
     }
 
     public String extractUsername(String token) {
@@ -40,16 +66,25 @@ public class JwtUtil {
     }
 
     private Claims extractAllClaims(String token) {
-        // ✅ Usar el método getSignKey() para obtener la clave
-        return Jwts.parserBuilder()
-                .setSigningKey(getSignKey()) // Asegura que la clave esté correctamente formateada
-                .build()
-                .parseClaimsJws(token)
-                .getBody();
+        try {
+            return Jwts.parserBuilder()
+                    .setSigningKey(getSignKey())
+                    .build()
+                    .parseClaimsJws(token)
+                    .getBody();
+        } catch (Exception e) {
+            System.err.println("Error extrayendo claims del token: " + e.getMessage());
+            throw e;
+        }
     }
 
     private Boolean isTokenExpired(String token) {
-        return extractExpiration(token).before(new Date());
+        try {
+            return extractExpiration(token).before(new Date());
+        } catch (Exception e) {
+            System.err.println("Error verificando expiración del token: " + e.getMessage());
+            return true; // Si hay error, considerar como expirado
+        }
     }
 
     public String generateToken(String username) {
@@ -58,18 +93,35 @@ public class JwtUtil {
     }
 
     private String createToken(Map<String, Object> claims, String subject) {
-        // ✅ Usar el método getSignKey() para firmar el token
         return Jwts.builder()
                 .setClaims(claims)
                 .setSubject(subject)
                 .setIssuedAt(new Date(System.currentTimeMillis()))
-                .setExpiration(new Date(System.currentTimeMillis() + 1000 * 60 * 60 * 10)) // 10 horas
-                .signWith(getSignKey(), SignatureAlgorithm.HS256) // Asegura que la clave esté correctamente formateada
+                .setExpiration(new Date(System.currentTimeMillis() + EXPIRATION_TIME))
+                .signWith(getSignKey(), SignatureAlgorithm.HS256)
                 .compact();
     }
 
     public Boolean validateToken(String token, String username) {
-        final String extractedUsername = extractUsername(token);
-        return (extractedUsername.equals(username) && !isTokenExpired(token));
+        try {
+            final String extractedUsername = extractUsername(token);
+            return (extractedUsername != null &&
+                    extractedUsername.equals(username) &&
+                    !isTokenExpired(token));
+        } catch (Exception e) {
+            System.err.println("Error validando token: " + e.getMessage());
+            return false;
+        }
+    }
+
+    // ✅ Método adicional para validar token sin username (útil para el filter)
+    public Boolean validateToken(String token) {
+        try {
+            final String username = extractUsername(token);
+            return (username != null && !isTokenExpired(token));
+        } catch (Exception e) {
+            System.err.println("Error validando token: " + e.getMessage());
+            return false;
+        }
     }
 }

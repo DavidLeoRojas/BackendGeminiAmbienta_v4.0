@@ -22,9 +22,11 @@ public class WebSecurityConfig {
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/api/auth/login").permitAll()
+                        .requestMatchers("/api/auth/**").permitAll() // Permite todos los endpoints de auth
+                        .requestMatchers("/error").permitAll() // Permite acceso a endpoints de error
                         .anyRequest().authenticated()
                 )
-                .addFilterBefore(jwtRequestFilter, UsernamePasswordAuthenticationFilter.class); // Asegura que el JWT filter se ejecute antes
+                .addFilterBefore(jwtRequestFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
     }
@@ -32,15 +34,19 @@ public class WebSecurityConfig {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration config = new CorsConfiguration();
-        // Usar allowedOriginPatterns en lugar de allowedOrigins
+
+        // Configuración corregida de CORS
         config.setAllowedOriginPatterns(Arrays.asList(
-                "http://localhost:[*]", // Permite cualquier puerto en localhost
-                "https://*.github.io"   // Permite subdominios de github.io
-                // Agrega otros patrones según sea necesario
+                "http://localhost:*",
+                "https://*.github.io",
+                "https://*.onrender.com",
+                "https://davidleorojas.github.io",
+                "https://davidleorojas.github.io/MockupsPublicoTC/"// Permite subdominios de github.io
         ));
-        config.setAllowCredentials(true); // Permitir credenciales
-        config.addAllowedHeader("*");     // Permitir todos los headers
-        config.addAllowedMethod("*");     // Permitir todos los métodos HTTP
+        config.setAllowCredentials(true);
+        config.setAllowedHeaders(Arrays.asList("*"));
+        config.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"));
+        config.setExposedHeaders(Arrays.asList("Authorization", "Content-Type")); // Headers expuestos
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", config);
@@ -52,3 +58,6 @@ public class WebSecurityConfig {
         return authConfig.getAuthenticationManager();
     }
 }
+
+
+
