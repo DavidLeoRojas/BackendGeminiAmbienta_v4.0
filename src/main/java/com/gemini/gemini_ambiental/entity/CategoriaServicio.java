@@ -3,6 +3,7 @@ package com.gemini.gemini_ambiental.entity;
 import jakarta.persistence.*;
 import lombok.*;
 
+// No necesitas importar LocalDateTime si no lo usas, pero lo dejo por si acaso
 import java.time.LocalDateTime;
 
 @Entity
@@ -25,6 +26,5 @@ public class CategoriaServicio {
     @Column(name = "descripcion", columnDefinition = "TEXT")
     private String descripcion;
 
-    @Column(name = "fecha_creacion", nullable = false, updatable = false)
-    private LocalDateTime fechaCreacion;
+
 }
