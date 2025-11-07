@@ -1,6 +1,7 @@
 package com.gemini.gemini_ambiental.config;
 
 import com.gemini.gemini_ambiental.config.JwtRequestFilter;
+import com.gemini.gemini_ambiental.service.UserDetailsServiceImpl;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -10,7 +11,6 @@ import org.springframework.security.config.annotation.authentication.configurati
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
-import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
@@ -29,15 +29,15 @@ public class WebSecurityConfig {
     @Autowired
     private JwtRequestFilter jwtRequestFilter;
 
+    // ✅ Ahora usamos tu implementación real
     @Autowired
-    private UserDetailsService userDetailsService;
+    private UserDetailsServiceImpl userDetailsService;
 
     @Bean
     public PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();
     }
 
-    // ✅ Este bean ya NO se usa en filterChain, pero sí en AuthenticationManager
     @Bean
     public DaoAuthenticationProvider authenticationProvider() {
         DaoAuthenticationProvider authProvider = new DaoAuthenticationProvider();
@@ -61,6 +61,7 @@ public class WebSecurityConfig {
                         .requestMatchers("/api/auth/login").permitAll()
                         .anyRequest().authenticated()
                 )
+                .authenticationProvider(authenticationProvider())
                 .addFilterBefore(jwtRequestFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
@@ -70,7 +71,6 @@ public class WebSecurityConfig {
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration config = new CorsConfiguration();
 
-        // ✅ Corregido: sin espacios al final
         config.setAllowedOrigins(List.of(
                 "https://davidleorojas.github.io",
                 "http://localhost:5500"

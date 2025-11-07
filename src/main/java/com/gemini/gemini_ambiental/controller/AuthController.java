@@ -12,9 +12,7 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.web.bind.annotation.*;
-
 @RestController
-@CrossOrigin(origins = "*")
 @RequestMapping("/api/auth")
 public class AuthController {
 
@@ -54,7 +52,8 @@ public class AuthController {
         final UserDetails userDetails = userDetailsService.loadUserByUsername(authRequest.getEmail());
         final String jwt = jwtUtil.generateToken(userDetails.getUsername());
 
-        return ResponseEntity.ok(new AuthResponse(jwt, persona.getDni(), persona.getNombre()));
+        // *** IMPORTANTE: agregar 'Bearer ' al token ***
+        return ResponseEntity.ok(new AuthResponse("Bearer " + jwt, persona.getDni(), persona.getNombre()));
     }
 
     static class AuthRequest {
@@ -68,10 +67,6 @@ public class AuthController {
         public void setDni(String dni) { this.dni = dni; }
     }
 
-
-    // ==============================
-    // DTO RESPONSE
-    // ==============================
     static class AuthResponse {
         private String token;
         private String id;
@@ -88,3 +83,4 @@ public class AuthController {
         public String getNombre() { return nombre; }
     }
 }
+
