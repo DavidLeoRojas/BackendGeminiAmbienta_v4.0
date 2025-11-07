@@ -10,12 +10,10 @@ import org.hibernate.type.SqlTypes;
 @Table(name = "cargo_especialidad")
 public class CargoEspecialidad {
 
-    // Cambiado de UUID a String, pero se mapea como UUID en BD
+
     @Id
-    // @GeneratedValue(strategy = GenerationType.UUID) // Comentado si lo defines manualmente o la BD lo genera
-    @JdbcTypeCode(SqlTypes.UUID) // <-- Añade esta anotación
-    @Column(name = "id_cargo_especialidad", updatable = false, nullable = false, columnDefinition = "uuid") // Clarifica el tipo en BD
-    private String idCargoEspecialidad; // ✅ Tipo String en Java
+    @Column(name = "id_cargo_especialidad", length = 10)
+    private String idCargoEspecialidad;
 
     @Column(name = "nombre", nullable = false)
     private String nombre;

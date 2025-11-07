@@ -9,7 +9,7 @@ public class Direccion {
 
     // Cambiado de UUID a String
     @Id
-    @GeneratedValue(strategy = GenerationType.UUID) // Mismo comentario que arriba
+    @Column(name = "id_direccion", length = 10)
     private String idDireccion;
 
     @Column(name = "nombre", nullable = false)
