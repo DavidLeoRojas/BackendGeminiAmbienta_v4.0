@@ -14,9 +14,9 @@ import java.math.BigDecimal;
 public class DetalleCotizacion {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "id_detalle_cotizacion")
-    private Long id;
+    // No uses @GeneratedValue si los IDs son strings generados manualmente
+    @Column(name = "id_detalle_cotizacion", length = 10) // Ajusta la longitud si es necesario
+    private String id; // ✅ Cambiado de Long a String
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "id_cotizacion", nullable = false)
