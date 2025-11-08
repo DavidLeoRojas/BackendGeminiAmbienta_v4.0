@@ -7,7 +7,7 @@ import java.time.LocalDateTime;
 @Table(name = "direccion")
 public class Direccion {
 
-    // Cambiado de UUID a String
+
     @Id
     @Column(name = "id_direccion", length = 10)
     private String idDireccion;

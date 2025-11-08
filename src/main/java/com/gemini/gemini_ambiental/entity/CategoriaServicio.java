@@ -17,8 +17,8 @@ import org.hibernate.type.SqlTypes;
 public class CategoriaServicio {
 
     @Id
-    @JdbcTypeCode(SqlTypes.UUID) // <-- Añade esta anotación si id_categoria_servicio es UUID en BD
-    @Column(name = "id_categoria_servicio", length = 36, columnDefinition = "uuid") // Clarifica el tipo en BD
+// <-- Añade esta anotación si id_categoria_servicio es UUID en BD
+    @Column(name = "id_categoria_servicio", length = 36) // Clarifica el tipo en BD
     private String idCategoriaServicio; // ✅ Tipo String en Java
 
     @Column(name = "nombre", nullable = false, length = 255)

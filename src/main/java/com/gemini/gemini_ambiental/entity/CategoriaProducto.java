@@ -14,7 +14,6 @@ import lombok.*;
 public class CategoriaProducto {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.UUID)
     @Column(name = "id_categoria_producto", length = 36)
     private String idCategoriaProducto;
 
