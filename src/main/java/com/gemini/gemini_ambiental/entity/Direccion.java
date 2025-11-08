@@ -8,7 +8,7 @@ import java.time.LocalDateTime;
 @Table(name = "direccion")
 public class Direccion {
 
-
+    @Id
     @Column(name = "id_direccion", length = 10)
     private String idDireccion;
 
