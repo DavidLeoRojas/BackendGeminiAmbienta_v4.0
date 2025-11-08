@@ -22,20 +22,19 @@ import java.util.List;
 public class Cotizacion {
 
     @Id
-    @GeneratedValue(generator = "uuid2")
-    @GenericGenerator(name = "uuid2", strategy = "uuid2")
+    @GeneratedValue(generator = "uuid")
+    @GenericGenerator(name = "uuid", strategy = "org.hibernate.id.UUIDGenerator")
     @Column(name = "id_cotizacion", length = 36, updatable = false)
     private String idCotizacion;
 
+    // Cliente
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "dni_cliente", referencedColumnName = "dni", nullable = false)
     private Persona cliente;
 
-    @Column(name = "dni_empleado", length = 20)
-    private String dniEmpleado;
-
+    // Empleado asignado
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "dni_empleado", referencedColumnName = "dni", insertable = false, updatable = false)
+    @JoinColumn(name = "dni_empleado", referencedColumnName = "dni")
     private Persona empleado;
 
     @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss")
@@ -78,12 +77,4 @@ public class Cotizacion {
     @JsonManagedReference
     @Builder.Default
     private List<DetalleCotizacion> detalleCotizacion = new ArrayList<>();
-
-    public String getDniCliente() {
-        return cliente != null ? cliente.getDni() : null;
-    }
-
-    public enum EstadoCotizacion {
-        PENDIENTE, APROBADA, RECHAZADA, FINALIZADA, CANCELADA_CLIENTE, CANCELADA_EMPRESA
-    }
 }
