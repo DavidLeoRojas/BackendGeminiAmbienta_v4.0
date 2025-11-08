@@ -141,7 +141,11 @@ public class FacturaService {
 
         factura.setFechaEmision(dto.getFechaEmision());
         factura.setMontoTotal(dto.getMontoTotal());
-        factura.setEstado(Factura.EstadoFactura.valueOf(dto.getEstado()));
+        factura.setEstado(
+                dto.getEstado() != null
+                        ? Factura.EstadoFactura.valueOf(dto.getEstado())
+                        : Factura.EstadoFactura.PENDIENTE
+        );
         factura.setObservaciones(dto.getObservaciones());
         factura.setTipoFactura(Factura.TipoFactura.valueOf(dto.getTipoFactura()));
         factura.setValorServicio(dto.getValorServicio());
@@ -177,9 +181,17 @@ public class FacturaService {
         dto.setDniCliente(factura.getCliente() != null ? factura.getCliente().getDni() : null);
         dto.setFechaEmision(factura.getFechaEmision());
         dto.setMontoTotal(factura.getMontoTotal());
-        dto.setEstado(factura.getEstado().name());
+        dto.setEstado(
+                factura.getEstado() != null
+                        ? factura.getEstado().name()
+                        : "PENDIENTE" // o el default que uses
+        );
         dto.setObservaciones(factura.getObservaciones());
-        dto.setTipoFactura(factura.getTipoFactura().name());
+        dto.setTipoFactura(
+                factura.getTipoFactura() != null
+                        ? factura.getTipoFactura().name()
+                        : null
+        );
         dto.setIdCotizacion(factura.getCotizacion() != null ? factura.getCotizacion().getIdCotizacion() : null);
         dto.setFechaCreacion(factura.getFechaCreacion());
 
