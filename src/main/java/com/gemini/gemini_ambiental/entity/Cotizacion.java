@@ -26,13 +26,13 @@ public class Cotizacion {
     private String idCotizacion;
 
     // Cliente
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "dni_cliente")
     @JsonIgnoreProperties({"direccion", "cargoEspecialidad", "password"})
     private Persona cliente;
 
     // Empleado asignado
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "dni_empleado")
     @JsonIgnoreProperties({"direccion", "cargoEspecialidad", "password"})
     private Persona empleado;
