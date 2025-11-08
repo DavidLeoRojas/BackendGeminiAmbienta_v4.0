@@ -22,8 +22,6 @@ import java.util.List;
 public class Cotizacion {
 
     @Id
-    @GeneratedValue(generator = "uuid")
-    @GenericGenerator(name = "uuid", strategy = "org.hibernate.id.UUIDGenerator")
     @Column(name = "id_cotizacion", length = 36, updatable = false)
     private String idCotizacion;
 

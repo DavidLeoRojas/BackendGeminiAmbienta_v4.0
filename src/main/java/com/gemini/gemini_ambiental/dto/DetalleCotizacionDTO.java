@@ -9,7 +9,7 @@ import java.math.BigDecimal;
 @NoArgsConstructor
 @AllArgsConstructor
 public class DetalleCotizacionDTO {
-    private Long id;
+    private String id;
     private String idCotizacion;
     private String idProducto;
     private String nombreProducto;
