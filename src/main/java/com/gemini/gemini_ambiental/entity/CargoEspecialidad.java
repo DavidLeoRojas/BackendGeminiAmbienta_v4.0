@@ -1,5 +1,6 @@
 package com.gemini.gemini_ambiental.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
 import java.time.LocalDateTime;
 // Importa las anotaciones de Hibernate para el tipo JDBC
@@ -15,7 +16,7 @@ public class CargoEspecialidad {
     @Column(name = "id_cargo_especialidad", length = 10)
     private String idCargoEspecialidad;
 
-    @Column(name = "nombre", nullable = false)
+    @Column(nullable = false)
     private String nombre;
 
     @Column(name = "descripcion")
@@ -24,8 +25,9 @@ public class CargoEspecialidad {
     @Column(name = "fecha_creacion")
     private LocalDateTime fechaCreacion;
 
-    @ManyToOne(fetch = FetchType.LAZY) // Añadido fetch = FetchType.LAZY
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "id_categoria_servicio")
+    @JsonIgnoreProperties("cargoEspecialidades")
     private CategoriaServicio categoriaServicio;
 
     // Constructores, Getters y Setters (manteniendo idCargoEspecialidad como String)

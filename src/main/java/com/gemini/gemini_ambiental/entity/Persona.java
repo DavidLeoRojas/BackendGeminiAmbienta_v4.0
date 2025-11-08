@@ -1,12 +1,11 @@
 package com.gemini.gemini_ambiental.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Pattern;
 import lombok.*;
-
-import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "persona")
@@ -55,24 +54,14 @@ public class Persona {
     @Column(name = "password", length = 255)
     private String password;
 
-    // ✅ COMENTADO TEMPORALMENTE - QUITA EL ERROR
-    /*
-    @Column(name = "fecha_creacion", updatable = false)
-    @Builder.Default
-    private LocalDateTime fechaCreacion = LocalDateTime.now();
-
-    @PrePersist
-    protected void onCreate() {
-        this.fechaCreacion = LocalDateTime.now();
-    }
-    */
-
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "id_direccion")
+    @JsonIgnoreProperties({"persona", "dependencia"})
     private Direccion direccion;
 
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "id_cargo_especialidad")
+    @JsonIgnoreProperties("personas")
     private CargoEspecialidad cargoEspecialidad;
 
     public enum TipoPersona {

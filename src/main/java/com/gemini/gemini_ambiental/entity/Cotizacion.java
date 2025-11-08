@@ -1,6 +1,7 @@
 package com.gemini.gemini_ambiental.entity;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonManagedReference;
 import jakarta.persistence.*;
 import lombok.*;
@@ -11,7 +12,6 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
-
 @Entity
 @Table(name = "cotizacion")
 @Getter
@@ -27,12 +27,14 @@ public class Cotizacion {
 
     // Cliente
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "dni_cliente", referencedColumnName = "dni", nullable = false)
+    @JoinColumn(name = "dni_cliente")
+    @JsonIgnoreProperties({"direccion", "cargoEspecialidad", "password"})
     private Persona cliente;
 
     // Empleado asignado
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "dni_empleado", referencedColumnName = "dni")
+    @JoinColumn(name = "dni_empleado")
+    @JsonIgnoreProperties({"direccion", "cargoEspecialidad", "password"})
     private Persona empleado;
 
     @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss")
@@ -40,30 +42,27 @@ public class Cotizacion {
     private LocalDateTime fechaSolicitud;
 
     @JsonFormat(pattern = "yyyy-MM-dd")
-    @Column(name = "fecha_preferida")
     private LocalDate fechaPreferida;
 
     @JsonFormat(pattern = "yyyy-MM-dd")
-    @Column(name = "fecha_respuesta")
     private LocalDate fechaRespuesta;
 
-    @Column(name = "estado", nullable = false)
+    @Column(nullable = false)
     @Builder.Default
     private String estado = "PENDIENTE";
 
-    @Column(name = "prioridad", length = 50)
     private String prioridad;
 
-    @Column(name = "costo_total_cotizacion", precision = 12, scale = 2, nullable = false)
+    @Column(precision = 12, scale = 2, nullable = false)
     private BigDecimal costoTotalCotizacion;
 
-    @Column(name = "valor_servicio", precision = 12, scale = 2)
+    @Column(precision = 12, scale = 2)
     private BigDecimal valorServicio;
 
-    @Column(name = "descripcion_problema", columnDefinition = "TEXT")
+    @Column(columnDefinition = "TEXT")
     private String descripcionProblema;
 
-    @Column(name = "notas_internas", columnDefinition = "TEXT")
+    @Column(columnDefinition = "TEXT")
     private String notasInternas;
 
     @Builder.Default
@@ -71,8 +70,7 @@ public class Cotizacion {
     @Column(name = "fecha_creacion", updatable = false)
     private LocalDateTime fechaCreacion = LocalDateTime.now();
 
-    @OneToMany(mappedBy = "cotizacion", cascade = CascadeType.ALL, fetch = FetchType.LAZY, orphanRemoval = true)
-    @JsonManagedReference
-    @Builder.Default
+    @OneToMany(mappedBy = "cotizacion", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
+    @JsonIgnoreProperties("cotizacion")
     private List<DetalleCotizacion> detalleCotizacion = new ArrayList<>();
 }

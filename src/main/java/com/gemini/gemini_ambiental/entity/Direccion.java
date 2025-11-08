@@ -1,5 +1,6 @@
 package com.gemini.gemini_ambiental.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
 import java.time.LocalDateTime;
 
@@ -8,9 +9,9 @@ import java.time.LocalDateTime;
 public class Direccion {
 
 
-    @Id
     @Column(name = "id_direccion", length = 10)
     private String idDireccion;
+
 
     @Column(name = "nombre", nullable = false)
     private String nombre;
@@ -21,8 +22,9 @@ public class Direccion {
     @Column(name = "fecha_creacion")
     private LocalDateTime fechaCreacion;
 
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "depende_de")
+    @JsonIgnoreProperties("dependeDe")
     private Direccion dependeDe;
 
     // Constructores
