@@ -32,6 +32,7 @@ public class CotizacionController {
         }
     }
 
+
     @GetMapping("/{id}")
     public ResponseEntity<CotizacionDTO> getCotizacionById(@PathVariable String id) {
         try {
