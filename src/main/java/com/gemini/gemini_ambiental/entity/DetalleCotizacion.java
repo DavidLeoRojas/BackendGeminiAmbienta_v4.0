@@ -1,6 +1,6 @@
 package com.gemini.gemini_ambiental.entity;
 
-import com.fasterxml.jackson.annotation.JsonBackReference;
+import com.fasterxml.jackson.annotation.JsonBackReference; // Importa esta anotación
 import jakarta.persistence.*;
 import lombok.*;
 import java.math.BigDecimal;
@@ -17,13 +17,13 @@ public class DetalleCotizacion {
     @Column(name = "id_detalle_cotizacion", length = 10) // Ajusta la longitud si es necesario
     private String id; // ✅ Cambiado de Long a String
 
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "id_tipo_servicio")
     private TipoServicio tipoServicio;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "id_cotizacion", nullable = false)
-    @JsonBackReference
+    @JsonBackReference // <--- Mueve @JsonBackReference AQUÍ, sobre la variable 'cotizacion'
     private Cotizacion cotizacion;
 
     @ManyToOne(fetch = FetchType.LAZY)

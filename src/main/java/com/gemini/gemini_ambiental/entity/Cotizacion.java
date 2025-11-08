@@ -2,6 +2,7 @@ package com.gemini.gemini_ambiental.entity;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+// Añade la importación para JsonManagedReference
 import com.fasterxml.jackson.annotation.JsonManagedReference;
 import jakarta.persistence.*;
 import lombok.*;
@@ -12,6 +13,7 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+
 @Entity
 @Table(name = "cotizacion")
 @Getter
@@ -71,6 +73,7 @@ public class Cotizacion {
     private LocalDateTime fechaCreacion = LocalDateTime.now();
 
     @OneToMany(mappedBy = "cotizacion", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
-    @JsonIgnoreProperties("cotizacion")
+    @JsonManagedReference // <--- Añade @JsonManagedReference AQUÍ (opcional, pero recomendado para claridad)
+    @JsonIgnoreProperties("cotizacion") // <-- Opcional: Si no usas @JsonManagedReference, esta anotación en el padre también puede evitar el ciclo al serializar la cotización.
     private List<DetalleCotizacion> detalleCotizacion = new ArrayList<>();
 }
