@@ -37,4 +37,8 @@ public class DetalleCotizacion {
 
     @Column(precision = 12, scale = 2, nullable = false)
     private BigDecimal subtotal;
+
+    public String getId() {
+        return null;
+    }
 }
