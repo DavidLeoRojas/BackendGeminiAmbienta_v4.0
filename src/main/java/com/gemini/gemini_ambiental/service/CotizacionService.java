@@ -360,25 +360,40 @@ public class CotizacionService {
         }
 
         // Detalles de cotización
+// Detalles de cotización
         if (cotizacion.getDetalleCotizacion() != null && !cotizacion.getDetalleCotizacion().isEmpty()) {
             List<DetalleCotizacionDTO> detallesDto = cotizacion.getDetalleCotizacion().stream()
-                    .map(det -> {
-                        DetalleCotizacionDTO detDto = new DetalleCotizacionDTO();
-                        detDto.setId(det.getId());
-                        detDto.setIdCotizacion(det.getCotizacion().getIdCotizacion());
-                        detDto.setIdProducto(det.getProducto().getIdProducto());
-                        detDto.setNombreProducto(det.getProducto().getNombre());
-                        detDto.setCantidad(det.getCantidad());
-                        detDto.setPrecioUnitario(det.getPrecioUnitario());
-                        detDto.setSubtotal(det.getSubtotal());
-                        return detDto;
-                    })
+                    .map(this::convertDetalleToDTO)  // ← USA EL MÉTODO NUEVO
                     .collect(Collectors.toList());
             dto.setDetalleCotizacion(detallesDto);
         }
 
         return dto;
     }
+
+
+    private DetalleCotizacionDTO convertDetalleToDTO(DetalleCotizacion detalle) {
+        DetalleCotizacionDTO detalleDTO = new DetalleCotizacionDTO();
+        detalleDTO.setId(detalle.getId());
+        detalleDTO.setIdCotizacion(detalle.getCotizacion().getIdCotizacion());
+        detalleDTO.setCantidad(detalle.getCantidad());
+        detalleDTO.setPrecioUnitario(detalle.getPrecioUnitario());
+        detalleDTO.setSubtotal(detalle.getSubtotal());
+
+        // ✅ MANEJAR PRODUCTO NULL
+        if (detalle.getProducto() != null) {
+            detalleDTO.setIdProducto(detalle.getProducto().getIdProducto());
+            detalleDTO.setNombreProducto(detalle.getProducto().getNombre());
+        } else {
+            // ✅ VALORES POR DEFECTO CUANDO PRODUCTO ES NULL
+            detalleDTO.setIdProducto("PRODUCTO_ELIMINADO");
+            detalleDTO.setNombreProducto("Producto no disponible");
+            System.out.println("⚠️ Advertencia: Detalle " + detalle.getId() + " tiene producto null");
+        }
+
+        return detalleDTO;
+    }
+
 
     private CotizacionDTO convertToDTOForList(Cotizacion cotizacion) {
         CotizacionDTO dto = new CotizacionDTO();
@@ -413,19 +428,10 @@ public class CotizacionService {
         }
 
         // ✅ CORRECCIÓN: Incluir información básica de productos para la lista
+// ✅ CORRECCIÓN: Incluir información básica de productos para la lista
         if (cotizacion.getDetalleCotizacion() != null && !cotizacion.getDetalleCotizacion().isEmpty()) {
             List<DetalleCotizacionDTO> detallesBasicos = cotizacion.getDetalleCotizacion().stream()
-                    .map(det -> {
-                        DetalleCotizacionDTO detDto = new DetalleCotizacionDTO();
-                        detDto.setId(det.getId());
-                        detDto.setIdCotizacion(det.getCotizacion().getIdCotizacion());
-                        detDto.setIdProducto(det.getProducto().getIdProducto());
-                        detDto.setNombreProducto(det.getProducto().getNombre());
-                        detDto.setCantidad(det.getCantidad());
-                        detDto.setPrecioUnitario(det.getPrecioUnitario());
-                        detDto.setSubtotal(det.getSubtotal());
-                        return detDto;
-                    })
+                    .map(this::convertDetalleToDTO)  // ← USA EL MÉTODO NUEVO
                     .collect(Collectors.toList());
             dto.setDetalleCotizacion(detallesBasicos);
         } else {
