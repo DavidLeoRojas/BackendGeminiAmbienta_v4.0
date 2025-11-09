@@ -37,7 +37,7 @@ public class Factura {
     private BigDecimal montoTotal;
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "estado_factura", nullable = false, length = 20)
+    @Column(name = "estado", nullable = false, length = 20)
     @Builder.Default
     private EstadoFactura estado = EstadoFactura.PENDIENTE;
 
