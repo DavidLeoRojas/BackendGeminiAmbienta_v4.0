@@ -36,7 +36,7 @@ public class ProductoService {
         Producto existingProducto = productoRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Producto no encontrado con ID: " + id));
 
-        // Actualizar campos
+        // Actualizar campos básicos
         existingProducto.setNombre(productoDTO.getNombre());
         existingProducto.setPrecioActual(productoDTO.getPrecioActual());
         existingProducto.setStock(productoDTO.getStock());
@@ -44,6 +44,15 @@ public class ProductoService {
         existingProducto.setLote(productoDTO.getLote());
         existingProducto.setProveedor(productoDTO.getProveedor());
         existingProducto.setObservaciones(productoDTO.getObservaciones());
+
+        // ✅ CORREGIDO: Actualizar la categoría
+        if (productoDTO.getIdCategoriaProducto() != null && !productoDTO.getIdCategoriaProducto().trim().isEmpty()) {
+            CategoriaProducto categoria = categoriaProductoRepository.findById(productoDTO.getIdCategoriaProducto())
+                    .orElseThrow(() -> new ResourceNotFoundException("Categoría no encontrada con ID: " + productoDTO.getIdCategoriaProducto()));
+            existingProducto.setCategoriaProducto(categoria);
+        } else {
+            existingProducto.setCategoriaProducto(null);
+        }
 
         Producto updatedProducto = productoRepository.save(existingProducto);
         return convertToDTO(updatedProducto);
