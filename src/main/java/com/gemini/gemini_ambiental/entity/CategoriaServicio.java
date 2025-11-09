@@ -1,4 +1,3 @@
-// En CategoriaServicio.java
 package com.gemini.gemini_ambiental.entity;
 
 import jakarta.persistence.*;
