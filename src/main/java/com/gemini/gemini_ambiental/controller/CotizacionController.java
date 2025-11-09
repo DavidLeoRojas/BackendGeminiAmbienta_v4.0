@@ -2,6 +2,8 @@ package com.gemini.gemini_ambiental.controller;
 
 import com.gemini.gemini_ambiental.dto.CotizacionDTO;
 import com.gemini.gemini_ambiental.dto.CotizacionRequestDTO;
+import com.gemini.gemini_ambiental.entity.Cotizacion;
+import com.gemini.gemini_ambiental.repository.CotizacionRepository;
 import com.gemini.gemini_ambiental.service.CotizacionService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
@@ -9,6 +11,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
@@ -20,8 +23,89 @@ public class CotizacionController {
     @Autowired
     private CotizacionService cotizacionService;
 
-    // ========== ENDPOINTS DE CONSULTA ==========
+    // 👇 AÑADE ESTE REPOSITORIO para el diagnóstico
+    @Autowired
+    private CotizacionRepository cotizacionRepository;
 
+    // === ENDPOINTS DE DIAGNÓSTICO ===
+
+    @GetMapping("/test-simple")
+    public ResponseEntity<?> testSimple() {
+        try {
+            System.out.println("=== TEST SIMPLE COTIZACIONES ===");
+
+            // Test 1: Contar cotizaciones
+            long count = cotizacionRepository.count();
+            System.out.println("Total cotizaciones: " + count);
+
+            // Test 2: Obtener datos básicos sin conversión a DTO
+            List<Cotizacion> cotizaciones = cotizacionRepository.findAll();
+            System.out.println("Cotizaciones encontradas: " + cotizaciones.size());
+
+            if (!cotizaciones.isEmpty()) {
+                Cotizacion primera = cotizaciones.get(0);
+                System.out.println("Primera cotización - ID: " + primera.getIdCotizacion() +
+                        ", Estado: " + primera.getEstado() +
+                        ", Cliente: " + primera.getCliente().getDni());
+            }
+
+            // Devolver respuesta simple
+            return ResponseEntity.ok(Map.of(
+                    "status", "success",
+                    "total", count,
+                    "message", "Test completado exitosamente"
+            ));
+
+        } catch (Exception e) {
+            System.err.println("ERROR en test-simple: " + e.getMessage());
+            e.printStackTrace();
+            return ResponseEntity.status(500).body(Map.of(
+                    "error", e.getMessage(),
+                    "stacktrace", Arrays.toString(e.getStackTrace())
+            ));
+        }
+    }
+
+    // === ENDPOINT PRINCIPAL MODIFICADO ===
+
+    @GetMapping
+    public ResponseEntity<?> getAllCotizaciones() {
+        try {
+            System.out.println("=== INICIANDO GET /api/cotizaciones ===");
+
+            // Test simple primero
+            long count = cotizacionRepository.count();
+            System.out.println("Total en BD: " + count);
+
+            // Intentar obtener las cotizaciones
+            List<CotizacionDTO> cotizaciones = cotizacionService.getAllCotizaciones();
+            System.out.println("Cotizaciones convertidas a DTO: " + cotizaciones.size());
+
+            if (!cotizaciones.isEmpty()) {
+                CotizacionDTO primera = cotizaciones.get(0);
+                System.out.println("Primera DTO - ID: " + primera.getIdCotizacion() +
+                        ", Estado: " + primera.getEstado());
+            }
+
+            return ResponseEntity.ok(cotizaciones);
+
+        } catch (Exception e) {
+            System.err.println("ERROR CRÍTICO en getAllCotizaciones: " + e.getMessage());
+            e.printStackTrace();
+
+            // Devolver error con detalles
+            return ResponseEntity.status(500).body(Map.of(
+                    "error", "Error interno del servidor",
+                    "message", e.getMessage(),
+                    "exception", e.getClass().getSimpleName(),
+                    "timestamp", new java.util.Date()
+            ));
+        }
+    }
+
+
+    // ========== ENDPOINTS DE CONSULTA ==========
+/*
     @GetMapping
     public ResponseEntity<List<CotizacionDTO>> getAllCotizaciones() {
         try {
@@ -31,7 +115,7 @@ public class CotizacionController {
             return ResponseEntity.internalServerError().build();
         }
     }
-
+*/
 
     @GetMapping("/{id}")
     public ResponseEntity<CotizacionDTO> getCotizacionById(@PathVariable String id) {
@@ -42,6 +126,10 @@ public class CotizacionController {
             return ResponseEntity.notFound().build();
         }
     }
+
+
+
+
 
     @GetMapping("/{id}/completa")
     public ResponseEntity<CotizacionDTO> getCotizacionCompleta(@PathVariable String id) {
@@ -234,4 +322,8 @@ public class CotizacionController {
             return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
         }
     }
+
+
+
+
 }

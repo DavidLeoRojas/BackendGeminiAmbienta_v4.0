@@ -1,6 +1,7 @@
 package com.gemini.gemini_ambiental.entity;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonManagedReference;
 import jakarta.persistence.*;
@@ -76,6 +77,7 @@ public class Cotizacion {
     @Column(name = "fecha_creacion", updatable = false)
     private LocalDateTime fechaCreacion = LocalDateTime.now();
 
+    @JsonIgnore
     @OneToMany(mappedBy = "cotizacion", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
     @JsonIgnoreProperties("cotizacion")
     private List<DetalleCotizacion> detalleCotizacion = new ArrayList<>();
