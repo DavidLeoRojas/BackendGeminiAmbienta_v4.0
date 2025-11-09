@@ -1,8 +1,10 @@
 package com.gemini.gemini_ambiental.service;
 
 
+import com.gemini.gemini_ambiental.entity.CategoriaProducto;
 import com.gemini.gemini_ambiental.entity.Producto;
 import com.gemini.gemini_ambiental.exception.ResourceNotFoundException;
+import com.gemini.gemini_ambiental.repository.CategoriaProductoRepository;
 import com.gemini.gemini_ambiental.repository.ProductoRepository;
 import com.gemini.gemini_ambiental.dto.ProductoDTO;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -19,6 +21,10 @@ public class ProductoService {
 
     @Autowired
     private ProductoRepository productoRepository;
+
+
+    @Autowired
+    private CategoriaProductoRepository categoriaProductoRepository;
 
     public ProductoDTO createProducto(ProductoDTO productoDTO) {
         Producto producto = convertToEntity(productoDTO);
@@ -140,8 +146,17 @@ public class ProductoService {
         producto.setLote(dto.getLote());
         producto.setProveedor(dto.getProveedor());
         producto.setObservaciones(dto.getObservaciones());
+
+        // ✅ ASIGNAR CATEGORÍA si se proporciona
+        if (dto.getIdCategoriaProducto() != null && !dto.getIdCategoriaProducto().trim().isEmpty()) {
+            CategoriaProducto categoria = categoriaProductoRepository.findById(dto.getIdCategoriaProducto())
+                    .orElse(null); // O manejar el error como prefieras
+            producto.setCategoriaProducto(categoria);
+        }
+
         return producto;
     }
+
 
     private ProductoDTO convertToDTO(Producto producto) {
         ProductoDTO dto = new ProductoDTO();
