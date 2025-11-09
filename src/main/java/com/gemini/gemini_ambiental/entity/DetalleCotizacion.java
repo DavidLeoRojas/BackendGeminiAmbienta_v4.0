@@ -1,8 +1,9 @@
 package com.gemini.gemini_ambiental.entity;
 
-import com.fasterxml.jackson.annotation.JsonBackReference; // Importa esta anotación
+import com.fasterxml.jackson.annotation.JsonBackReference;
 import jakarta.persistence.*;
 import lombok.*;
+
 import java.math.BigDecimal;
 
 @Entity
@@ -11,46 +12,29 @@ import java.math.BigDecimal;
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
+@Builder
 public class DetalleCotizacion {
 
     @Id
-    @Column(name = "id_detalle_cotizacion", length = 10) // Ajusta la longitud si es necesario
-    private String id; // ✅ Cambiado de Long a String
-
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "id_tipo_servicio")
-    private TipoServicio tipoServicio;
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "id_detalle")
+    private Long idDetalle;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "id_cotizacion", nullable = false)
-    @JsonBackReference // <--- Mueve @JsonBackReference AQUÍ, sobre la variable 'cotizacion'
+    @JsonBackReference  // 🔥 ESTA ANOTACIÓN ROMPE LA RECURSIÓN
     private Cotizacion cotizacion;
 
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "id_producto", nullable = false)
     private Producto producto;
 
-    @Column(name = "cantidad", nullable = false)
+    @Column(nullable = false)
     private Integer cantidad;
 
-    @Column(name = "precio_unitario", precision = 12, scale = 2, nullable = false)
+    @Column(precision = 12, scale = 2, nullable = false)
     private BigDecimal precioUnitario;
 
-    @Column(name = "costos_extra", precision = 12, scale = 2)
-    private BigDecimal costosExtra;
-
-    @Column(name = "descripcion_costos_extra", columnDefinition = "TEXT")
-    private String descripcionCostosExtra;
-
-    @Column(name = "subtotal", precision = 12, scale = 2, nullable = false)
+    @Column(precision = 12, scale = 2, nullable = false)
     private BigDecimal subtotal;
-
-    public DetalleCotizacion(Cotizacion cotizacion, Producto producto, Integer cantidad, BigDecimal precioUnitario) {
-        this.cotizacion = cotizacion;
-        this.producto = producto;
-        this.cantidad = cantidad;
-        this.precioUnitario = precioUnitario;
-        this.costosExtra = BigDecimal.ZERO;
-        this.subtotal = precioUnitario.multiply(BigDecimal.valueOf(cantidad));
-    }
 }
