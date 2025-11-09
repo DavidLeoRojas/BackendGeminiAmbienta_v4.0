@@ -81,7 +81,9 @@ public class CotizacionService {
         Cotizacion existingCotizacion = cotizacionRepository.findByIdWithAllRelations(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Cotización no encontrada con ID: " + id));
 
-        existingCotizacion.setEstado(cotizacionDTO.getEstado());
+        if (cotizacionDTO.getEstado() != null) {
+            existingCotizacion.setEstado(Cotizacion.EstadoCotizacion.valueOf(cotizacionDTO.getEstado()));
+        }
         existingCotizacion.setFechaPreferida(cotizacionDTO.getFechaPreferida());
         existingCotizacion.setFechaRespuesta(cotizacionDTO.getFechaRespuesta());
         existingCotizacion.setPrioridad(cotizacionDTO.getPrioridad());
@@ -146,7 +148,7 @@ public class CotizacionService {
 
         if (estado != null && !estado.isEmpty()) {
             cotizaciones = cotizaciones.stream()
-                    .filter(c -> c.getEstado() != null && c.getEstado().equalsIgnoreCase(estado))
+                    .filter(c -> c.getEstado() != null && c.getEstado().name().equalsIgnoreCase(estado))
                     .collect(Collectors.toList());
         }
 
@@ -173,7 +175,7 @@ public class CotizacionService {
         Cotizacion cotizacion = cotizacionRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Cotización no encontrada con ID: " + id));
 
-        cotizacion.setEstado(nuevoEstado);
+        cotizacion.setEstado(Cotizacion.EstadoCotizacion.valueOf(nuevoEstado));
 
         // Si se aprueba o finaliza, establecer fecha de respuesta
         if ("APROBADA".equals(nuevoEstado) || "FINALIZADA".equals(nuevoEstado)) {
@@ -185,7 +187,7 @@ public class CotizacionService {
     }
 
     public Long contarCotizacionesPorEstado(String estado) {
-        return cotizacionRepository.countByEstado(estado);
+        return cotizacionRepository.countByEstado(Cotizacion.EstadoCotizacion.valueOf(estado));
     }
 
     // ========== MÉTODOS PRIVADOS DE CONVERSIÓN ==========
@@ -204,7 +206,14 @@ public class CotizacionService {
         cotizacion.setFechaSolicitud(LocalDateTime.now());
         cotizacion.setFechaPreferida(requestDTO.getFechaPreferida());
         cotizacion.setPrioridad(requestDTO.getPrioridad() != null ? requestDTO.getPrioridad() : "Media");
-        cotizacion.setEstado(requestDTO.getEstado() != null ? requestDTO.getEstado() : "PENDIENTE");
+
+        // ✅ CORREGIDO: Usar Enum en lugar de String
+        if (requestDTO.getEstado() != null) {
+            cotizacion.setEstado(Cotizacion.EstadoCotizacion.valueOf(requestDTO.getEstado()));
+        } else {
+            cotizacion.setEstado(Cotizacion.EstadoCotizacion.PENDIENTE);
+        }
+
         cotizacion.setDescripcionProblema(requestDTO.getDescripcionProblema());
         cotizacion.setNotasInternas(requestDTO.getNotasInternas());
 
@@ -229,21 +238,18 @@ public class CotizacionService {
 
                 cotizacion.getDetalleCotizacion().add(detalle);
             }
-            // ❌ ELIMINAR ESTA RECALCULACIÓN COMPLETAMENTE
-            // NO HAY NINGUNA LÍNEA AQUÍ QUE RECALCULE cotizacion.setCostoTotalCotizacion(...)
-            // El costoTotalCotizacion se asignará más abajo usando el valor enviado.
         }
 
         // ✅ CORRECCIÓN: SIEMPRE USAR EL COSTO TOTAL ENVIADO DESDE EL FRONTEND
-        // No importa si hay o no productos, siempre usamos el valor que nos envía el frontend.
         cotizacion.setCostoTotalCotizacion(requestDTO.getCostoTotalCotizacion() != null ?
                 requestDTO.getCostoTotalCotizacion() : BigDecimal.ZERO);
 
         return cotizacion;
     }
+
     private void updateCotizacionFromRequest(Cotizacion cotizacion, CotizacionRequestDTO requestDTO) {
         if (requestDTO.getEstado() != null) {
-            cotizacion.setEstado(requestDTO.getEstado());
+            cotizacion.setEstado(Cotizacion.EstadoCotizacion.valueOf(requestDTO.getEstado()));
         }
         if (requestDTO.getFechaPreferida() != null) {
             cotizacion.setFechaPreferida(requestDTO.getFechaPreferida());
@@ -281,16 +287,17 @@ public class CotizacionService {
 
             cotizacion.getDetalleCotizacion().add(detalle);
         }
-
-        // ❌ ASEGURARSE DE QUE ESTA RECALCULACIÓN SIGA SIENDO ELIMINADA
-        // NO HAY NINGUNA LÍNEA AQUÍ QUE RECALCULE cotizacion.setCostoTotalCotizacion(...)
-        // El costoTotalCotizacion se actualizará en updateCotizacionWithProducts o se mantendrá si no se envía explícitamente.
     }
 
     private Cotizacion convertToEntity(CotizacionDTO dto) {
         Cotizacion cotizacion = new Cotizacion();
         cotizacion.setIdCotizacion(dto.getIdCotizacion());
-        cotizacion.setEstado(dto.getEstado());
+
+        // ✅ CORREGIDO: Convertir String a Enum
+        if (dto.getEstado() != null) {
+            cotizacion.setEstado(Cotizacion.EstadoCotizacion.valueOf(dto.getEstado()));
+        }
+
         cotizacion.setFechaSolicitud(dto.getFechaSolicitud());
         cotizacion.setFechaPreferida(dto.getFechaPreferida());
         cotizacion.setFechaRespuesta(dto.getFechaRespuesta());
@@ -323,7 +330,10 @@ public class CotizacionService {
         dto.setIdCotizacion(cotizacion.getIdCotizacion());
         dto.setDniCliente(cotizacion.getCliente() != null ? cotizacion.getCliente().getDni() : null);
         dto.setDniEmpleado(cotizacion.getEmpleado() != null ? cotizacion.getEmpleado().getDni() : null);
-        dto.setEstado(cotizacion.getEstado());
+
+        // ✅ CORREGIDO: Convertir Enum a String
+        dto.setEstado(cotizacion.getEstado() != null ? cotizacion.getEstado().name() : null);
+
         dto.setFechaSolicitud(cotizacion.getFechaSolicitud());
         dto.setFechaPreferida(cotizacion.getFechaPreferida());
         dto.setFechaRespuesta(cotizacion.getFechaRespuesta());
@@ -375,7 +385,10 @@ public class CotizacionService {
         dto.setIdCotizacion(cotizacion.getIdCotizacion());
         dto.setDniCliente(cotizacion.getCliente() != null ? cotizacion.getCliente().getDni() : null);
         dto.setDniEmpleado(cotizacion.getEmpleado() != null ? cotizacion.getEmpleado().getDni() : null);
-        dto.setEstado(cotizacion.getEstado());
+
+        // ✅ CORREGIDO: Convertir Enum a String
+        dto.setEstado(cotizacion.getEstado() != null ? cotizacion.getEstado().name() : null);
+
         dto.setFechaSolicitud(cotizacion.getFechaSolicitud());
         dto.setFechaPreferida(cotizacion.getFechaPreferida());
         dto.setFechaRespuesta(cotizacion.getFechaRespuesta());

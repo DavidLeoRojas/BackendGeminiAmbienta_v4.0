@@ -24,13 +24,13 @@ public interface CotizacionRepository extends JpaRepository<Cotizacion, String> 
     @Query("SELECT c FROM Cotizacion c LEFT JOIN FETCH c.cliente WHERE c.cliente.dni = :dniCliente")
     List<Cotizacion> findByClienteDni(@Param("dniCliente") String dniCliente);
 
-    // Encontrar cotizaciones por estado
-    List<Cotizacion> findByEstado(String estado);
+    // ✅ CORREGIDO: Usar Enum en lugar de String
+    List<Cotizacion> findByEstado(Cotizacion.EstadoCotizacion estado);
 
     // Encontrar cotizaciones por prioridad
     List<Cotizacion> findByPrioridad(String prioridad);
 
-    // Contar cotizaciones por estado
+    // ✅ CORREGIDO: Usar Enum en lugar de String
     @Query("SELECT COUNT(c) FROM Cotizacion c WHERE c.estado = :estado")
-    Long countByEstado(@Param("estado") String estado);
+    Long countByEstado(@Param("estado") Cotizacion.EstadoCotizacion estado);
 }
