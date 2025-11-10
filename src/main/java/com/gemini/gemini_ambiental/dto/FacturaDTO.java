@@ -1,7 +1,6 @@
 package com.gemini.gemini_ambiental.dto;
 
 import lombok.Data;
-
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -22,24 +21,32 @@ public class FacturaDTO {
     private String tipoFactura;
     private String idCotizacion;
     private LocalDateTime fechaCreacion;
-
-    // --- NUEVO: Campo valorServicio ---
     private BigDecimal valorServicio;
 
-    // --- NUEVO: Detalle del DTO ---
+    // ✅ CORREGIDO: Agregar objeto cliente completo
+    private PersonaDTO cliente;
+
+    // ✅ CORREGIDO: Agregar objeto cotizacion
+    private CotizacionDTO cotizacion;
+
+    // ✅ CORREGIDO: Mantener detalle unificado PERO con información completa
     private List<DetalleFacturaDTO> detalleFactura;
 
-    // DTO para el detalle - VERSIÓN CORREGIDA
+    // ✅ NUEVO: Para compatibilidad con frontend existente
+    private List<DetalleFacturaDTO> detalleProductos;
+    private List<DetalleFacturaDTO> detalleServicios;
+
     @Data
     public static class DetalleFacturaDTO {
         private Long idDetalleFactura;
         private String idProducto;
+        private String idServicio; // ✅ NUEVO: Para servicios
         private Integer cantidad;
         private BigDecimal subtotal;
         private BigDecimal precioUnitario;
-
-        // ✅ CAMPOS NUEVOS PARA INFORMACIÓN COMPLETA
         private String nombreProducto;
+        private String nombreServicio; // ✅ NUEVO: Para servicios
         private Integer stockProducto;
+        private String tipo; // ✅ NUEVO: "producto" o "servicio"
     }
 }

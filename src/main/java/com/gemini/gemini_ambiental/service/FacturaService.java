@@ -233,10 +233,14 @@ public class FacturaService {
         facturaRepository.delete(factura);
     }
 
+// EN FacturaService.java - REEMPLAZA getFacturaById:
+
     public FacturaDTO getFacturaById(String id) {
         Factura factura = facturaRepository.findByIdWithRelations(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Factura no encontrada con ID: " + id));
-        return convertToDTO(factura);
+
+        // ✅ USAR EL MÉTODO MEJORADO QUE INCLUYE PRODUCTOS COMPLETOS
+        return convertToDTOWithProductos(factura);
     }
 
     public List<FacturaDTO> getAllFacturas() {
@@ -328,6 +332,8 @@ public class FacturaService {
         }
     }
 
+// EN FacturaService.java - REEMPLAZA el método convertToDTO:
+
     private FacturaDTO convertToDTO(Factura factura) {
         FacturaDTO dto = new FacturaDTO();
         dto.setValorServicio(factura.getValorServicio());
@@ -338,7 +344,7 @@ public class FacturaService {
         dto.setEstado(
                 factura.getEstado() != null
                         ? factura.getEstado().name()
-                        : "PENDIENTE" // o el default que uses
+                        : "PENDIENTE"
         );
         dto.setObservaciones(factura.getObservaciones());
         dto.setTipoFactura(
@@ -355,18 +361,28 @@ public class FacturaService {
             dto.setCorreoCliente(factura.getCliente().getCorreo());
         }
 
-        // Convertir productos
+        // ✅ CORREGIDO: Convertir productos CON INFORMACIÓN COMPLETA
         if (factura.getDetalleProductos() != null) {
-            dto.setDetalleFactura(factura.getDetalleProductos().stream()
+            List<FacturaDTO.DetalleFacturaDTO> detalles = factura.getDetalleProductos().stream()
                     .map(det -> {
                         FacturaDTO.DetalleFacturaDTO detalleDto = new FacturaDTO.DetalleFacturaDTO();
                         detalleDto.setIdDetalleFactura(det.getIdDetalle());
                         detalleDto.setIdProducto(det.getProducto().getIdProducto());
                         detalleDto.setCantidad(det.getCantidad());
                         detalleDto.setPrecioUnitario(det.getPrecioUnitario());
+
+                        // ✅ CALCULAR SUBTOTAL
+                        BigDecimal subtotal = det.getPrecioUnitario().multiply(BigDecimal.valueOf(det.getCantidad()));
+                        detalleDto.setSubtotal(subtotal);
+
+                        // ✅ INFORMACIÓN COMPLETA DEL PRODUCTO
+                        detalleDto.setNombreProducto(det.getProducto().getNombre());
+                        detalleDto.setStockProducto(det.getProducto().getStock());
+
                         return detalleDto;
                     })
-                    .collect(Collectors.toList()));
+                    .collect(Collectors.toList());
+            dto.setDetalleFactura(detalles);
         }
 
         return dto;
