@@ -29,6 +29,9 @@ public class FacturaService {
     private CotizacionRepository cotizacionRepository;
 
     @Autowired
+    private FacturaIdGeneratorService idGeneratorService;
+
+    @Autowired
     private ProductoRepository productoRepository;
 
     public FacturaDTO createFactura(FacturaDTO facturaDTO) {
@@ -110,6 +113,10 @@ public class FacturaService {
     private Factura convertToEntity(FacturaDTO dto) {
         Factura factura = new Factura();
 
+        // ✅ CORRECCIÓN: Generar ID secuencial
+        String nuevoId = idGeneratorService.generarNuevoIdFactura();
+        factura.setIdFactura(nuevoId);
+
         Persona cliente = personaRepository.findByDni(dto.getDniCliente())
                 .orElseThrow(() -> new ResourceNotFoundException("Cliente no encontrado con DNI: " + dto.getDniCliente()));
         factura.setCliente(cliente);
@@ -123,10 +130,22 @@ public class FacturaService {
         // Agregar productos desde el formulario
         if (dto.getDetalleFactura() != null && !dto.getDetalleFactura().isEmpty()) {
             for (FacturaDTO.DetalleFacturaDTO dtoDetalle : dto.getDetalleFactura()) {
+                // ✅ Validar producto antes de agregar
+                if (dtoDetalle.getIdProducto() == null ||
+                        "PRODUCTO_ELIMINADO".equals(dtoDetalle.getIdProducto()) ||
+                        dtoDetalle.getCantidad() == null ||
+                        dtoDetalle.getCantidad() <= 0) {
+                    continue; // Saltar productos inválidos
+                }
+
                 Producto producto = productoRepository.findById(dtoDetalle.getIdProducto())
                         .orElseThrow(() -> new ResourceNotFoundException("Producto no encontrado con ID: " + dtoDetalle.getIdProducto()));
 
-                BigDecimal precioUnitario = producto.getPrecioActual();
+                // ✅ Usar precio del DTO si viene, sino del producto
+                BigDecimal precioUnitario = dtoDetalle.getPrecioUnitario() != null ?
+                        dtoDetalle.getPrecioUnitario() :
+                        producto.getPrecioActual();
+
                 Integer cantidad = dtoDetalle.getCantidad();
 
                 DetalleFacturaProducto detalle = DetalleFacturaProducto.builder()

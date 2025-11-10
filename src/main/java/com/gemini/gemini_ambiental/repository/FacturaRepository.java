@@ -26,6 +26,8 @@ public interface FacturaRepository extends JpaRepository<Factura, String> {
     @Query("SELECT COUNT(f) FROM Factura f WHERE f.estado = 'Pendiente'")
     Long countPendingInvoices();
 
+    @Query("SELECT f.idFactura FROM Factura f WHERE f.idFactura LIKE 'FAC%' ORDER BY f.idFactura DESC LIMIT 1")
+    String findLastFacturaId();
     // --- ACTUALIZADO: Incluir detalleFactura y producto ---
     // En FacturaRepository.java
     @Query("SELECT f FROM Factura f " +
