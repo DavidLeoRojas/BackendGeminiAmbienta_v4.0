@@ -29,7 +29,7 @@ public class FacturaDTO {
     // --- NUEVO: Detalle del DTO ---
     private List<DetalleFacturaDTO> detalleFactura;
 
-    // DTO para el detalle
+    // DTO para el detalle - VERSIÓN CORREGIDA
     @Data
     public static class DetalleFacturaDTO {
         private Long idDetalleFactura;
@@ -37,5 +37,9 @@ public class FacturaDTO {
         private Integer cantidad;
         private BigDecimal subtotal;
         private BigDecimal precioUnitario;
+
+        // ✅ CAMPOS NUEVOS PARA INFORMACIÓN COMPLETA
+        private String nombreProducto;
+        private Integer stockProducto;
     }
 }

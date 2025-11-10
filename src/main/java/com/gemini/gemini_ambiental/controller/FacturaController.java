@@ -21,7 +21,30 @@ public class FacturaController {
         List<FacturaDTO> facturas = facturaService.getAllFacturas();
         return ResponseEntity.ok(facturas);
     }
+    // En FacturaController.java - AGREGAR ESTOS ENDPOINTS
+    @PutMapping("/{id}/con-productos")
+    public ResponseEntity<FacturaDTO> updateFacturaConProductos(
+            @PathVariable String id,
+            @RequestBody FacturaDTO facturaDTO) {
+        try {
+            FacturaDTO updatedFactura = facturaService.updateFacturaConProductos(id, facturaDTO);
+            return ResponseEntity.ok(updatedFactura);
+        } catch (Exception e) {
+            e.printStackTrace(); // Para debug
+            return ResponseEntity.badRequest().build();
+        }
+    }
 
+    @GetMapping("/{id}/con-productos")
+    public ResponseEntity<FacturaDTO> getFacturaConProductos(@PathVariable String id) {
+        try {
+            FacturaDTO factura = facturaService.getFacturaConProductos(id);
+            return ResponseEntity.ok(factura);
+        } catch (Exception e) {
+            e.printStackTrace(); // Para debug
+            return ResponseEntity.notFound().build();
+        }
+    }
     @GetMapping("/search")
     public ResponseEntity<List<FacturaDTO>> searchFacturas(
             @RequestParam(required = false) String fechaInicio,

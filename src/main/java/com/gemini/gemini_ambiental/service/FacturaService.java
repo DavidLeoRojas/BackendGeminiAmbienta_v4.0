@@ -34,6 +34,131 @@ public class FacturaService {
     @Autowired
     private ProductoRepository productoRepository;
 
+
+    // En FacturaService.java - AGREGAR ESTOS MÉTODOS
+    public FacturaDTO getFacturaConProductos(String id) {
+        Factura factura = facturaRepository.findByIdWithProductos(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Factura no encontrada con ID: " + id));
+        return convertToDTOWithProductos(factura);
+    }
+
+    @Transactional
+    public FacturaDTO updateFacturaConProductos(String id, FacturaDTO facturaDTO) {
+        try {
+            System.out.println("🔄 Actualizando factura con productos: " + id);
+            System.out.println("📦 Datos recibidos: " + facturaDTO.toString());
+
+            Factura existingFactura = facturaRepository.findByIdWithProductos(id)
+                    .orElseThrow(() -> new ResourceNotFoundException("Factura no encontrada con ID: " + id));
+
+            // ✅ ACTUALIZAR CLIENTE
+            if (facturaDTO.getDniCliente() != null) {
+                Persona cliente = personaRepository.findByDni(facturaDTO.getDniCliente())
+                        .orElseThrow(() -> new ResourceNotFoundException("Cliente no encontrado con DNI: " + facturaDTO.getDniCliente()));
+                existingFactura.setCliente(cliente);
+            }
+
+            // ✅ ACTUALIZAR PRODUCTOS - LIMPIAR Y AGREGAR NUEVOS
+            existingFactura.getDetalleProductos().clear();
+
+            if (facturaDTO.getDetalleFactura() != null && !facturaDTO.getDetalleFactura().isEmpty()) {
+                for (FacturaDTO.DetalleFacturaDTO dtoDetalle : facturaDTO.getDetalleFactura()) {
+                    // ✅ VALIDACIÓN ROBUSTA
+                    if (dtoDetalle.getIdProducto() == null ||
+                            "PRODUCTO_ELIMINADO".equals(dtoDetalle.getIdProducto()) ||
+                            dtoDetalle.getCantidad() == null ||
+                            dtoDetalle.getCantidad() <= 0) {
+                        System.out.println("⚠️ Producto inválido omitido: " + dtoDetalle.getIdProducto());
+                        continue;
+                    }
+
+                    Producto producto = productoRepository.findById(dtoDetalle.getIdProducto())
+                            .orElseThrow(() -> new ResourceNotFoundException("Producto no encontrado con ID: " + dtoDetalle.getIdProducto()));
+
+                    // ✅ USAR PRECIO DEL DTO O DEL PRODUCTO
+                    BigDecimal precioUnitario = dtoDetalle.getPrecioUnitario() != null ?
+                            dtoDetalle.getPrecioUnitario() :
+                            producto.getPrecioActual();
+
+                    DetalleFacturaProducto detalle = DetalleFacturaProducto.builder()
+                            .producto(producto)
+                            .cantidad(dtoDetalle.getCantidad())
+                            .precioUnitario(precioUnitario)
+                            .build();
+
+                    existingFactura.addDetalleProducto(detalle);
+                }
+            }
+
+            // ✅ ACTUALIZAR OTROS CAMPOS CON VALIDACIONES
+            existingFactura.setFechaEmision(facturaDTO.getFechaEmision());
+            existingFactura.setMontoTotal(facturaDTO.getMontoTotal() != null ? facturaDTO.getMontoTotal() : BigDecimal.ZERO);
+
+            // ✅ MANEJAR ESTADO CON VALOR POR DEFECTO
+            if (facturaDTO.getEstado() != null) {
+                try {
+                    existingFactura.setEstado(Factura.EstadoFactura.valueOf(facturaDTO.getEstado()));
+                } catch (IllegalArgumentException e) {
+                    existingFactura.setEstado(Factura.EstadoFactura.PENDIENTE);
+                }
+            } else {
+                existingFactura.setEstado(Factura.EstadoFactura.PENDIENTE);
+            }
+
+            existingFactura.setObservaciones(facturaDTO.getObservaciones());
+
+            // ✅ MANEJAR VALOR SERVICIO (puede ser null)
+            existingFactura.setValorServicio(facturaDTO.getValorServicio() != null ?
+                    facturaDTO.getValorServicio() : BigDecimal.ZERO);
+
+            // ✅ MANEJAR TIPO FACTURA
+            if (facturaDTO.getTipoFactura() != null) {
+                try {
+                    existingFactura.setTipoFactura(Factura.TipoFactura.valueOf(facturaDTO.getTipoFactura()));
+                } catch (IllegalArgumentException e) {
+                    existingFactura.setTipoFactura(Factura.TipoFactura.Simple);
+                }
+            }
+
+            Factura updatedFactura = facturaRepository.save(existingFactura);
+            System.out.println("✅ Factura actualizada exitosamente: " + updatedFactura.getIdFactura());
+
+            return convertToDTOWithProductos(updatedFactura);
+
+        } catch (Exception e) {
+            System.err.println("❌ Error al actualizar factura: " + e.getMessage());
+            e.printStackTrace();
+            throw e;
+        }
+    }
+
+    // ✅ MÉTODO MEJORADO PARA CARGAR PRODUCTOS
+    private FacturaDTO convertToDTOWithProductos(Factura factura) {
+        FacturaDTO dto = convertToDTO(factura);
+
+        // ✅ CARGAR INFORMACIÓN COMPLETA DE PRODUCTOS
+        if (factura.getDetalleProductos() != null) {
+            List<FacturaDTO.DetalleFacturaDTO> detalles = factura.getDetalleProductos().stream()
+                    .map(det -> {
+                        FacturaDTO.DetalleFacturaDTO detalleDto = new FacturaDTO.DetalleFacturaDTO();
+                        detalleDto.setIdDetalleFactura(det.getIdDetalle());
+                        detalleDto.setIdProducto(det.getProducto().getIdProducto());
+                        detalleDto.setCantidad(det.getCantidad());
+                        detalleDto.setPrecioUnitario(det.getPrecioUnitario());
+                        detalleDto.setSubtotal(det.getPrecioUnitario().multiply(BigDecimal.valueOf(det.getCantidad())));
+
+                        // ✅ INFORMACIÓN EXTRA PARA EL FRONTEND
+                        detalleDto.setNombreProducto(det.getProducto().getNombre());
+                        detalleDto.setStockProducto(det.getProducto().getStock());
+
+                        return detalleDto;
+                    })
+                    .collect(Collectors.toList());
+            dto.setDetalleFactura(detalles);
+        }
+
+        return dto;
+    }
     public FacturaDTO createFactura(FacturaDTO facturaDTO) {
         Factura factura = convertToEntity(facturaDTO);
         Factura savedFactura = facturaRepository.save(factura);
