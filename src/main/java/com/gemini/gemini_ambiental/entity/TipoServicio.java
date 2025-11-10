@@ -17,11 +17,21 @@ public class TipoServicio {
     @Column(name = "id_tipo_servicio")
     private String idTipoServicio;
 
-    @Column(nullable = false)
-    private String nombre;
+    @Column(name = "nombre_servicio", nullable = false)
+    private String nombreServicio;
 
+    @Column(columnDefinition = "TEXT")
     private String descripcion;
 
     @Column(precision = 12, scale = 2)
-    private BigDecimal precioBase;
+    private BigDecimal costo;
+
+    private String duracion;
+    private String frecuencia;
+    private String estado;
+    private String icono;
+
+    @ManyToOne(fetch = FetchType.EAGER)
+    @JoinColumn(name = "id_categoria_servicio")
+    private CategoriaServicio categoriaServicio;
 }

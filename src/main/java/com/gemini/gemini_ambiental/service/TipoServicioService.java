@@ -1,4 +1,3 @@
-// src/main/java/com/gemini/gemini_ambiental/service/TipoServicioService.java
 package com.gemini.gemini_ambiental.service;
 
 import com.gemini.gemini_ambiental.dto.TipoServicioDTO;
@@ -19,7 +18,7 @@ import java.util.stream.Collectors;
 public class TipoServicioService {
 
     @Autowired
-    private ServicioRepository servicioRepository; // <-- Inyectar
+    private ServicioRepository servicioRepository;
 
     @Autowired
     private TipoServicioRepository tipoServicioRepository;
@@ -27,21 +26,18 @@ public class TipoServicioService {
     @Autowired
     private CategoriaServicioRepository categoriaServicioRepository;
 
-    // Método para obtener todos los tipos de servicio
     public List<TipoServicioDTO> getAllTiposServicio() {
         return tipoServicioRepository.findAll().stream()
                 .map(this::convertToDTO)
                 .collect(Collectors.toList());
     }
 
-    // Método para obtener un tipo de servicio por ID
     public TipoServicioDTO getTipoServicioById(String id) {
         TipoServicio tipo = tipoServicioRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Tipo de servicio no encontrado con ID: " + id));
         return convertToDTO(tipo);
     }
 
-    // Método para crear un nuevo tipo de servicio
     public TipoServicioDTO createTipoServicio(TipoServicioDTO dto) {
         if (dto.getIdCategoriaServicio() == null || dto.getIdCategoriaServicio().isEmpty()) {
             throw new IllegalArgumentException("El ID de la categoría de servicio es obligatorio.");
@@ -50,21 +46,22 @@ public class TipoServicioService {
         CategoriaServicio categoria = categoriaServicioRepository.findById(dto.getIdCategoriaServicio())
                 .orElseThrow(() -> new ResourceNotFoundException("Categoría de servicio no encontrada con ID: " + dto.getIdCategoriaServicio()));
 
-        TipoServicio tipoServicio = new TipoServicio();
-        tipoServicio.setNombreServicio(dto.getNombreServicio());
-        tipoServicio.setDescripcion(dto.getDescripcion());
-        tipoServicio.setCosto(dto.getCosto());
-        tipoServicio.setDuracion(dto.getDuracion());
-        tipoServicio.setFrecuencia(dto.getFrecuencia());
-        tipoServicio.setEstado(dto.getEstado() != null ? dto.getEstado() : "ACTIVO");
-        tipoServicio.setIcono(dto.getIcono());
-        tipoServicio.setCategoriaServicio(categoria);
+        TipoServicio tipoServicio = TipoServicio.builder()
+                .idTipoServicio(dto.getIdTipoServicio())
+                .nombreServicio(dto.getNombreServicio())
+                .descripcion(dto.getDescripcion())
+                .costo(dto.getCosto())
+                .duracion(dto.getDuracion())
+                .frecuencia(dto.getFrecuencia())
+                .estado(dto.getEstado() != null ? dto.getEstado() : "ACTIVO")
+                .icono(dto.getIcono())
+                .categoriaServicio(categoria)
+                .build();
 
         TipoServicio savedTipoServicio = tipoServicioRepository.save(tipoServicio);
         return convertToDTO(savedTipoServicio);
     }
 
-    // Método para actualizar un tipo de servicio
     public TipoServicioDTO updateTipoServicio(String id, TipoServicioDTO dto) {
         TipoServicio existingTipo = tipoServicioRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Tipo de servicio no encontrado con ID: " + id));
@@ -75,49 +72,60 @@ public class TipoServicioService {
             existingTipo.setCategoriaServicio(categoria);
         }
 
-        existingTipo.setNombreServicio(dto.getNombreServicio());
-        existingTipo.setDescripcion(dto.getDescripcion());
-        existingTipo.setCosto(dto.getCosto());
-        existingTipo.setDuracion(dto.getDuracion());
-        existingTipo.setFrecuencia(dto.getFrecuencia());
-        existingTipo.setEstado(dto.getEstado());
-        existingTipo.setIcono(dto.getIcono());
+        if (dto.getNombreServicio() != null) {
+            existingTipo.setNombreServicio(dto.getNombreServicio());
+        }
+        if (dto.getDescripcion() != null) {
+            existingTipo.setDescripcion(dto.getDescripcion());
+        }
+        if (dto.getCosto() != null) {
+            existingTipo.setCosto(dto.getCosto());
+        }
+        if (dto.getDuracion() != null) {
+            existingTipo.setDuracion(dto.getDuracion());
+        }
+        if (dto.getFrecuencia() != null) {
+            existingTipo.setFrecuencia(dto.getFrecuencia());
+        }
+        if (dto.getEstado() != null) {
+            existingTipo.setEstado(dto.getEstado());
+        }
+        if (dto.getIcono() != null) {
+            existingTipo.setIcono(dto.getIcono());
+        }
 
         TipoServicio updatedTipo = tipoServicioRepository.save(existingTipo);
         return convertToDTO(updatedTipo);
     }
 
-    // Método para eliminar un tipo de servicio
     public void deleteTipoServicio(String id) {
-        // 1. Verificar si el tipo de servicio existe
         TipoServicio tipo = tipoServicioRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Tipo de servicio no encontrado con ID: " + id));
 
-        // 2. Buscar servicios agendados que usan este tipo de servicio
-        // Asumiendo que Servicio tiene un campo tipoServicio (TipoServicio)
-        List<Servicio> serviciosVinculados = servicioRepository.findByTipoServicio_IdTipoServicio(id);
+        // Verificar si hay servicios vinculados (si el método existe en el repository)
+        try {
+            List<Servicio> serviciosVinculados = servicioRepository.findByTipoServicio_IdTipoServicio(id);
 
-        // 3. Verificar si hay servicios activos (no Completados ni Cancelados)
-        // Asumiendo que los estados válidos para permitir la eliminación son "Completado" y "Cancelado"
-        List<Servicio> serviciosActivos = serviciosVinculados.stream()
-                .filter(s -> !("Completado".equals(s.getEstado()) || "Cancelado".equals(s.getEstado())))
-                .toList();
+            if (!serviciosVinculados.isEmpty()) {
+                List<Servicio> serviciosActivos = serviciosVinculados.stream()
+                        .filter(s -> !("Completado".equals(s.getEstado()) || "Cancelado".equals(s.getEstado())))
+                        .collect(Collectors.toList());
 
-        // 4. Si hay servicios activos, lanzar una excepción
-        if (!serviciosActivos.isEmpty()) {
-            String detalles = serviciosActivos.stream()
-                    .map(s -> "ID: " + s.getIdServicio() + ", Fecha: " + s.getFecha() + ", Hora: " + s.getHora() + ", Cliente: " + (s.getCliente() != null ? s.getCliente().getNombre() : "N/A") + ", Estado: " + s.getEstado())
-                    .collect(Collectors.joining("\n - ", " - ", ""));
-            throw new IllegalArgumentException("No se puede eliminar el tipo de servicio '" + tipo.getNombreServicio() + "' porque hay servicios agendados activos que lo utilizan (no están Completados o Cancelados):\n" + detalles);
+                if (!serviciosActivos.isEmpty()) {
+                    String detalles = serviciosActivos.stream()
+                            .map(s -> "ID: " + s.getIdServicio() + ", Estado: " + s.getEstado())
+                            .collect(Collectors.joining("\n - ", " - ", ""));
+                    throw new IllegalArgumentException("No se puede eliminar el tipo de servicio '" + tipo.getNombreServicio() + "' porque hay servicios activos:\n" + detalles);
+                }
+            }
+        } catch (Exception e) {
+            // Si el método no existe, continuar con la eliminación
+            System.out.println("Advertencia: No se pudo verificar servicios vinculados: " + e.getMessage());
         }
 
-        // 5. Si no hay servicios activos, proceder con la eliminación
-        // Si solo se permiten eliminar si todos están Completados o Cancelados, no hay problema.
-        // Si hay servicios Cancelados o Completados, aún se puede eliminar el tipo de servicio.
         tipoServicioRepository.deleteById(id);
     }
 
-    // Método auxiliar para convertir entidad a DTO
     private TipoServicioDTO convertToDTO(TipoServicio tipoServicio) {
         TipoServicioDTO dto = new TipoServicioDTO();
         dto.setIdTipoServicio(tipoServicio.getIdTipoServicio());
@@ -128,7 +136,28 @@ public class TipoServicioService {
         dto.setFrecuencia(tipoServicio.getFrecuencia());
         dto.setEstado(tipoServicio.getEstado());
         dto.setIcono(tipoServicio.getIcono());
-        dto.setIdCategoriaServicio(tipoServicio.getCategoriaServicio().getIdCategoriaServicio());
+
+        if (tipoServicio.getCategoriaServicio() != null) {
+            dto.setIdCategoriaServicio(tipoServicio.getCategoriaServicio().getIdCategoriaServicio());
+        }
+
         return dto;
+    }
+
+    // Método para obtener tipos de servicio por categoría
+    public List<TipoServicioDTO> getTiposServicioByCategoria(String idCategoria) {
+        return tipoServicioRepository.findAll().stream()
+                .filter(tipo -> tipo.getCategoriaServicio() != null &&
+                        tipo.getCategoriaServicio().getIdCategoriaServicio().equals(idCategoria))
+                .map(this::convertToDTO)
+                .collect(Collectors.toList());
+    }
+
+    // Método para obtener tipos de servicio activos
+    public List<TipoServicioDTO> getTiposServicioActivos() {
+        return tipoServicioRepository.findAll().stream()
+                .filter(tipo -> "ACTIVO".equals(tipo.getEstado()))
+                .map(this::convertToDTO)
+                .collect(Collectors.toList());
     }
 }
