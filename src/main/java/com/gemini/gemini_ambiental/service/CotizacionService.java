@@ -405,7 +405,7 @@ public class CotizacionService {
         // 🔥 INFORMACIÓN DEL TIPO DE SERVICIO
         if (detalle.getTipoServicio() != null) {
             detalleDTO.setIdTipoServicio(detalle.getTipoServicio().getIdTipoServicio());
-            detalleDTO.setNombreTipoServicio(detalle.getTipoServicio().getNombre());
+            detalleDTO.setNombreTipoServicio(detalle.getTipoServicio().getNombreServicio());
         } else {
             detalleDTO.setIdTipoServicio("SERV_DEFAULT");
             detalleDTO.setNombreTipoServicio("Servicio General");
