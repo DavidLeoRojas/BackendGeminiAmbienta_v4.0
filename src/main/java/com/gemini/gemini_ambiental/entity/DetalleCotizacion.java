@@ -3,7 +3,6 @@ package com.gemini.gemini_ambiental.entity;
 import com.fasterxml.jackson.annotation.JsonBackReference;
 import jakarta.persistence.*;
 import lombok.*;
-
 import java.math.BigDecimal;
 
 @Entity
@@ -22,12 +21,17 @@ public class DetalleCotizacion {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "id_cotizacion", nullable = false)
-    @JsonBackReference  // 🔥 ESTA ANOTACIÓN ROMPE LA RECURSIÓN
+    @JsonBackReference
     private Cotizacion cotizacion;
 
     @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "id_producto", nullable = false)
     private Producto producto;
+
+    // 🔥 NUEVO CAMPO OBLIGATORIO
+    @ManyToOne(fetch = FetchType.EAGER)
+    @JoinColumn(name = "id_tipo_servicio", nullable = false)
+    private TipoServicio tipoServicio;
 
     @Column(nullable = false)
     private Integer cantidad;
@@ -39,6 +43,6 @@ public class DetalleCotizacion {
     private BigDecimal subtotal;
 
     public String getId() {
-        return null;
+        return idDetalle != null ? idDetalle.toString() : null;
     }
 }

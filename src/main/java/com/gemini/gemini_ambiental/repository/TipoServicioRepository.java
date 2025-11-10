@@ -1,4 +1,3 @@
-// src/main/java/com/gemini/gemini_ambiental/repository/TipoServicioRepository.java
 package com.gemini.gemini_ambiental.repository;
 
 import com.gemini.gemini_ambiental.entity.TipoServicio;

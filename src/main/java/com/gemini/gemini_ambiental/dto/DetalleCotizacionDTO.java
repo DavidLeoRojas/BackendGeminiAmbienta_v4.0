@@ -16,4 +16,6 @@ public class DetalleCotizacionDTO {
     private Integer cantidad;
     private BigDecimal precioUnitario;
     private BigDecimal subtotal;
+    private String idTipoServicio; // 🔥 NUEVO CAMPO
+    private String nombreTipoServicio; // 🔥 OPCIONAL: para mostrar en frontend
 }

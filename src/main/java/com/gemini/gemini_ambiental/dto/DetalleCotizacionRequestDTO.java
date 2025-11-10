@@ -10,6 +10,9 @@ import java.math.BigDecimal;
 @AllArgsConstructor
 public class DetalleCotizacionRequestDTO {
     private String idProducto;
+    private String nombreProducto;
     private Integer cantidad;
     private BigDecimal precioUnitario;
+    private BigDecimal subtotal;
+    private String idTipoServicio; // 🔥 NUEVO CAMPO
 }

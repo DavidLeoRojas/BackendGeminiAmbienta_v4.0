@@ -1,14 +1,8 @@
 package com.gemini.gemini_ambiental.service;
 
-import com.gemini.gemini_ambiental.entity.Cotizacion;
-import com.gemini.gemini_ambiental.entity.DetalleCotizacion;
-import com.gemini.gemini_ambiental.entity.Persona;
-import com.gemini.gemini_ambiental.entity.Producto;
+import com.gemini.gemini_ambiental.entity.*;
 import com.gemini.gemini_ambiental.exception.ResourceNotFoundException;
-import com.gemini.gemini_ambiental.repository.CotizacionRepository;
-import com.gemini.gemini_ambiental.repository.DetalleCotizacionRepository;
-import com.gemini.gemini_ambiental.repository.PersonaRepository;
-import com.gemini.gemini_ambiental.repository.ProductoRepository;
+import com.gemini.gemini_ambiental.repository.*;
 import com.gemini.gemini_ambiental.dto.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -27,6 +21,9 @@ public class CotizacionService {
 
     @Autowired
     private CotizacionRepository cotizacionRepository;
+
+    @Autowired
+    private TipoServicioRepository tipoServicioRepository;
 
     @Autowired
     private PersonaRepository personaRepository;
@@ -207,7 +204,6 @@ public class CotizacionService {
         cotizacion.setFechaPreferida(requestDTO.getFechaPreferida());
         cotizacion.setPrioridad(requestDTO.getPrioridad() != null ? requestDTO.getPrioridad() : "Media");
 
-        // ✅ CORREGIDO: Usar Enum en lugar de String
         if (requestDTO.getEstado() != null) {
             cotizacion.setEstado(Cotizacion.EstadoCotizacion.valueOf(requestDTO.getEstado()));
         } else {
@@ -216,11 +212,7 @@ public class CotizacionService {
 
         cotizacion.setDescripcionProblema(requestDTO.getDescripcionProblema());
         cotizacion.setNotasInternas(requestDTO.getNotasInternas());
-
-        // ✅ Asignar el Valor del Servicio desde el DTO
         cotizacion.setValorServicio(requestDTO.getValorServicio() != null ? requestDTO.getValorServicio() : BigDecimal.ZERO);
-
-        // ✅ CORRECCIÓN: Inicializar la lista de detalles
         cotizacion.setDetalleCotizacion(new ArrayList<>());
 
         // Configurar detalles de cotización
@@ -229,18 +221,28 @@ public class CotizacionService {
                 Producto producto = productoRepository.findById(detalleRequest.getIdProducto())
                         .orElseThrow(() -> new ResourceNotFoundException("Producto no encontrado con ID: " + detalleRequest.getIdProducto()));
 
-                DetalleCotizacion detalle = new DetalleCotizacion();
-                detalle.setCotizacion(cotizacion);
-                detalle.setProducto(producto);
-                detalle.setCantidad(detalleRequest.getCantidad());
-                detalle.setPrecioUnitario(detalleRequest.getPrecioUnitario() != null ?
-                        detalleRequest.getPrecioUnitario() : BigDecimal.ZERO);
+                // 🔥 OBTENER TIPO DE SERVICIO
+                TipoServicio tipoServicio = tipoServicioRepository.findById(
+                        detalleRequest.getIdTipoServicio() != null ?
+                                detalleRequest.getIdTipoServicio() : "SERV_DEFAULT"
+                ).orElseThrow(() -> new ResourceNotFoundException(
+                        "Tipo de servicio no encontrado con ID: " + detalleRequest.getIdTipoServicio()));
+
+                DetalleCotizacion detalle = DetalleCotizacion.builder()
+                        .cotizacion(cotizacion)
+                        .producto(producto)
+                        .tipoServicio(tipoServicio) // 🔥 ASIGNAR TIPO SERVICIO
+                        .cantidad(detalleRequest.getCantidad())
+                        .precioUnitario(detalleRequest.getPrecioUnitario() != null ?
+                                detalleRequest.getPrecioUnitario() : BigDecimal.ZERO)
+                        .subtotal(detalleRequest.getSubtotal() != null ?
+                                detalleRequest.getSubtotal() : BigDecimal.ZERO)
+                        .build();
 
                 cotizacion.getDetalleCotizacion().add(detalle);
             }
         }
 
-        // ✅ CORRECCIÓN: SIEMPRE USAR EL COSTO TOTAL ENVIADO DESDE EL FRONTEND
         cotizacion.setCostoTotalCotizacion(requestDTO.getCostoTotalCotizacion() != null ?
                 requestDTO.getCostoTotalCotizacion() : BigDecimal.ZERO);
 
@@ -278,12 +280,23 @@ public class CotizacionService {
             Producto producto = productoRepository.findById(detalleRequest.getIdProducto())
                     .orElseThrow(() -> new ResourceNotFoundException("Producto no encontrado con ID: " + detalleRequest.getIdProducto()));
 
-            DetalleCotizacion detalle = new DetalleCotizacion();
-            detalle.setCotizacion(cotizacion);
-            detalle.setProducto(producto);
-            detalle.setCantidad(detalleRequest.getCantidad());
-            detalle.setPrecioUnitario(detalleRequest.getPrecioUnitario() != null ?
-                    detalleRequest.getPrecioUnitario() : BigDecimal.ZERO);
+            // 🔥 OBTENER TIPO DE SERVICIO
+            TipoServicio tipoServicio = tipoServicioRepository.findById(
+                    detalleRequest.getIdTipoServicio() != null ?
+                            detalleRequest.getIdTipoServicio() : "SERV_DEFAULT"
+            ).orElseThrow(() -> new ResourceNotFoundException(
+                    "Tipo de servicio no encontrado con ID: " + detalleRequest.getIdTipoServicio()));
+
+            DetalleCotizacion detalle = DetalleCotizacion.builder()
+                    .cotizacion(cotizacion)
+                    .producto(producto)
+                    .tipoServicio(tipoServicio) // 🔥 ASIGNAR TIPO SERVICIO
+                    .cantidad(detalleRequest.getCantidad())
+                    .precioUnitario(detalleRequest.getPrecioUnitario() != null ?
+                            detalleRequest.getPrecioUnitario() : BigDecimal.ZERO)
+                    .subtotal(detalleRequest.getSubtotal() != null ?
+                            detalleRequest.getSubtotal() : BigDecimal.ZERO)
+                    .build();
 
             cotizacion.getDetalleCotizacion().add(detalle);
         }
@@ -380,19 +393,27 @@ public class CotizacionService {
         detalleDTO.setPrecioUnitario(detalle.getPrecioUnitario());
         detalleDTO.setSubtotal(detalle.getSubtotal());
 
-        // ✅ MANEJAR PRODUCTO NULL
+        // Información del producto
         if (detalle.getProducto() != null) {
             detalleDTO.setIdProducto(detalle.getProducto().getIdProducto());
             detalleDTO.setNombreProducto(detalle.getProducto().getNombre());
         } else {
-            // ✅ VALORES POR DEFECTO CUANDO PRODUCTO ES NULL
             detalleDTO.setIdProducto("PRODUCTO_ELIMINADO");
             detalleDTO.setNombreProducto("Producto no disponible");
-            System.out.println("⚠️ Advertencia: Detalle " + detalle.getId() + " tiene producto null");
+        }
+
+        // 🔥 INFORMACIÓN DEL TIPO DE SERVICIO
+        if (detalle.getTipoServicio() != null) {
+            detalleDTO.setIdTipoServicio(detalle.getTipoServicio().getIdTipoServicio());
+            detalleDTO.setNombreTipoServicio(detalle.getTipoServicio().getNombre());
+        } else {
+            detalleDTO.setIdTipoServicio("SERV_DEFAULT");
+            detalleDTO.setNombreTipoServicio("Servicio General");
         }
 
         return detalleDTO;
     }
+
 
 
     private CotizacionDTO convertToDTOForList(Cotizacion cotizacion) {
@@ -440,4 +461,5 @@ public class CotizacionService {
 
         return dto;
     }
+
 }
