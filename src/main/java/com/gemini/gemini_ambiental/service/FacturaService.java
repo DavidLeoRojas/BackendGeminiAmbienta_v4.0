@@ -167,9 +167,19 @@ public class FacturaService {
     }
 
     public FacturaDTO updateFactura(String id, FacturaDTO facturaDTO) {
+        // ✅ USAR EL MÉTODO SIN MULTIPLE BAGS
         Factura existingFactura = facturaRepository.findByIdWithRelations(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Factura no encontrada con ID: " + id));
 
+        // ✅ CARGAR DETALLES DE PRODUCTOS POR SEPARADO
+        Factura facturaConProductos = facturaRepository.findByIdWithProductos(id)
+                .orElse(existingFactura);
+
+        // Copiar los productos existentes si es necesario
+        if (facturaConProductos.getDetalleProductos() != null) {
+            existingFactura.getDetalleProductos().clear();
+            existingFactura.getDetalleProductos().addAll(facturaConProductos.getDetalleProductos());
+        }
         if (facturaDTO.getDniCliente() != null) {
             Persona cliente = personaRepository.findByDni(facturaDTO.getDniCliente())
                     .orElseThrow(() -> new ResourceNotFoundException("Cliente no encontrado con DNI: " + facturaDTO.getDniCliente()));

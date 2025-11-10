@@ -26,27 +26,23 @@ public interface FacturaRepository extends JpaRepository<Factura, String> {
     @Query("SELECT COUNT(f) FROM Factura f WHERE f.estado = 'Pendiente'")
     Long countPendingInvoices();
 
-
-    // En FacturaRepository.java - AGREGAR ESTE MÉTODO
+    @Query("SELECT f.idFactura FROM Factura f WHERE f.idFactura LIKE 'FAC%' ORDER BY f.idFactura DESC LIMIT 1")
+    String findLastFacturaId();
+    // --- ACTUALIZADO: Incluir detalleFactura y producto ---
+    // En FacturaRepository.java
+// En FacturaRepository.java - CORREGIR EL MÉTODO
     @Query("SELECT f FROM Factura f " +
             "LEFT JOIN FETCH f.detalleProductos dp " +
-            "LEFT JOIN FETCH dp.producto " +  // ✅ CARGAR PRODUCTO COMPLETO
+            "LEFT JOIN FETCH dp.producto " +
             "LEFT JOIN FETCH f.cliente " +
             "LEFT JOIN FETCH f.cotizacion " +
             "WHERE f.idFactura = :id")
     Optional<Factura> findByIdWithProductos(@Param("id") String id);
 
-    @Query("SELECT f.idFactura FROM Factura f WHERE f.idFactura LIKE 'FAC%' ORDER BY f.idFactura DESC LIMIT 1")
-    String findLastFacturaId();
-    // --- ACTUALIZADO: Incluir detalleFactura y producto ---
-    // En FacturaRepository.java
+    // ✅ NUEVO MÉTODO SIN CARGAR detalleServicios
     @Query("SELECT f FROM Factura f " +
-            "JOIN FETCH f.cliente " +
+            "LEFT JOIN FETCH f.cliente " +
             "LEFT JOIN FETCH f.cotizacion " +
-            "LEFT JOIN FETCH f.detalleProductos dp " +      // ✅ detalleProductos (no detalleFactura)
-            "LEFT JOIN FETCH dp.producto " +                // ✅ producto está en DetalleFacturaProducto
-            "LEFT JOIN FETCH f.detalleServicios ds " +      // ✅ también cargar servicios si los necesitas
-            "LEFT JOIN FETCH ds.servicio " +
             "WHERE f.idFactura = :id")
     Optional<Factura> findByIdWithRelations(@Param("id") String id);
 }
