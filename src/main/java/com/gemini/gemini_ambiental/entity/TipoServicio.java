@@ -1,3 +1,4 @@
+// src/main/java/com/gemini/gemini_ambiental/entity/TipoServicio.java
 package com.gemini.gemini_ambiental.entity;
 
 import jakarta.persistence.*;
@@ -15,7 +16,11 @@ public class TipoServicio {
 
     @Id
     @Column(name = "id_tipo_servicio")
-    private String idTipoServicio;
+    // No se usa @GeneratedValue aquí porque la DB lo maneja con DEFAULT gen_id_tipo_servicio()
+    // Hibernate no generará el ID, lo hará la DB al INSERTAR si no se provee.
+    // Si el servicio lo construye sin ID, Hibernate insertará sin ID y la DB lo asignará.
+    // Si el servicio lo construye con ID (p. ej. para una actualización), Hibernate lo usará.
+    private String idTipoServicio; // <-- Mantener como String
 
     @Column(name = "nombre_servicio", nullable = false)
     private String nombreServicio;

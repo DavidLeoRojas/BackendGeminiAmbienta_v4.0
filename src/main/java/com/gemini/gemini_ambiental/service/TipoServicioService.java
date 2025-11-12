@@ -12,6 +12,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 @Service
@@ -21,7 +23,7 @@ public class TipoServicioService {
     private ServicioRepository servicioRepository;
 
     @Autowired
-    private TipoServicioRepository tipoServicioRepository;
+    private TipoServicioRepository tipoServicioRepository; // Asegúrate que este repo tenga el método findAll()
 
     @Autowired
     private CategoriaServicioRepository categoriaServicioRepository;
@@ -46,8 +48,12 @@ public class TipoServicioService {
         CategoriaServicio categoria = categoriaServicioRepository.findById(dto.getIdCategoriaServicio())
                 .orElseThrow(() -> new ResourceNotFoundException("Categoría de servicio no encontrada con ID: " + dto.getIdCategoriaServicio()));
 
+        // --- PASO 2: Generar el ID aquí ---
+        String nuevoId = generateNextId();
+        // ----------------------------------
+
         TipoServicio tipoServicio = TipoServicio.builder()
-                .idTipoServicio(dto.getIdTipoServicio())
+                .idTipoServicio(nuevoId) // <-- Asignar el ID generado aquí
                 .nombreServicio(dto.getNombreServicio())
                 .descripcion(dto.getDescripcion())
                 .costo(dto.getCosto())
@@ -61,6 +67,48 @@ public class TipoServicioService {
         TipoServicio savedTipoServicio = tipoServicioRepository.save(tipoServicio);
         return convertToDTO(savedTipoServicio);
     }
+
+    // --- MÉTODO AUXILIAR PARA GENERAR EL SIGUIENTE ID ---
+    private String generateNextId() {
+        // 1. Obtener todos los IDs existentes
+        List<TipoServicio> todosLosTipos = tipoServicioRepository.findAll();
+        List<String> idsExistentes = todosLosTipos.stream()
+                .map(TipoServicio::getIdTipoServicio)
+                .filter(id -> id != null && id.startsWith("TPS")) // Filtrar solo los que empiezan con "TPS"
+                .collect(Collectors.toList());
+
+        // 2. Si no hay ninguno, devolver el primero
+        if (idsExistentes.isEmpty()) {
+            return "TPS001";
+        }
+
+        // 3. Encontrar el número más alto
+        int maxNumero = idsExistentes.stream()
+                .mapToInt(this::extractNumber) // Extraer el número de cada ID
+                .max()
+                .orElse(0); // Si no hay coincidencias válidas, usar 0
+
+        // 4. Calcular el siguiente número
+        int siguienteNumero = maxNumero + 1;
+
+        // 5. Formatear y devolver el nuevo ID
+        return String.format("TPS%03d", siguienteNumero);
+    }
+
+    // --- MÉTODO AUXILIAR PARA EXTRAER EL NÚMERO ---
+    private int extractNumber(String id) {
+        // Usar expresiones regulares para extraer el número de 3 dígitos al final
+        Pattern pattern = Pattern.compile("^TPS(\\d{3})$");
+        Matcher matcher = pattern.matcher(id);
+        if (matcher.matches()) {
+            return Integer.parseInt(matcher.group(1));
+        } else {
+            // Si el formato no coincide, devolver 0 para no afectar el cálculo del máximo
+            // Considera loggear este caso si es inesperado
+            return 0;
+        }
+    }
+    // --- FIN MÉTODOS AUXILIARES ---
 
     public TipoServicioDTO updateTipoServicio(String id, TipoServicioDTO dto) {
         TipoServicio existingTipo = tipoServicioRepository.findById(id)
