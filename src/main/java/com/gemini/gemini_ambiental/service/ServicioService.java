@@ -13,6 +13,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 @Service
@@ -49,8 +51,13 @@ public class ServicioService {
         return convertToDTO(servicio);
     }
 
+    // --- MÉTODO CORREGIDO: createServicio ---
     public ServicioDTO createServicio(ServicioDTO servicioDTO) {
+        // 1. Generar el ID antes de construir el objeto Servicio
+        String nuevoId = generateNextId();
+
         Servicio servicio = new Servicio();
+        servicio.setIdServicio(nuevoId); // <-- ASIGNAR EL ID GENERADO AQUÍ
 
         servicio.setFecha(servicioDTO.getFecha());
         servicio.setHora(servicioDTO.getHora());
@@ -87,6 +94,49 @@ public class ServicioService {
         Servicio savedServicio = servicioRepository.save(servicio);
         return convertToDTO(savedServicio);
     }
+    // --- FIN MÉTODO CORREGIDO ---
+
+    // --- MÉTODO AUXILIAR PARA GENERAR EL SIGUIENTE ID ---
+    private String generateNextId() {
+        // 1. Obtener todos los IDs existentes
+        List<Servicio> todosLosServicios = servicioRepository.findAll();
+        List<String> idsExistentes = todosLosServicios.stream()
+                .map(Servicio::getIdServicio)
+                .filter(id -> id != null && id.startsWith("SER")) // Filtrar solo los que empiezan con "SER"
+                .collect(Collectors.toList());
+
+        // 2. Si no hay ninguno, devolver el primero
+        if (idsExistentes.isEmpty()) {
+            return "SER001";
+        }
+
+        // 3. Encontrar el número más alto
+        int maxNumero = idsExistentes.stream()
+                .mapToInt(this::extractNumber) // Extraer el número de cada ID
+                .max()
+                .orElse(0); // Si no hay coincidencias válidas, usar 0
+
+        // 4. Calcular el siguiente número
+        int siguienteNumero = maxNumero + 1;
+
+        // 5. Formatear y devolver el nuevo ID
+        return String.format("SER%03d", siguienteNumero);
+    }
+
+    // --- MÉTODO AUXILIAR PARA EXTRAER EL NÚMERO ---
+    private int extractNumber(String id) {
+        // Usar expresiones regulares para extraer el número de 3 dígitos al final
+        Pattern pattern = Pattern.compile("^SER(\\d{3})$");
+        Matcher matcher = pattern.matcher(id);
+        if (matcher.matches()) {
+            return Integer.parseInt(matcher.group(1));
+        } else {
+            // Si el formato no coincide, devolver 0 para no afectar el cálculo del máximo
+            // Considera loggear este caso si es inesperado
+            return 0;
+        }
+    }
+    // --- FIN MÉTODOS AUXILIARES ---
 
     public ServicioDTO updateServicio(String id, ServicioDTO servicioDTO) {
         Servicio servicio = servicioRepository.findById(id)
