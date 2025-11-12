@@ -16,10 +16,10 @@ public class ServicioDTO {
 
     private String idServicio;
 
-    // Cotización opcional
     private String idCotizacion;
 
     private String dniEmpleadoAsignado;
+
     private String dniCliente;
 
     @NotNull(message = "La fecha es obligatoria")
@@ -29,20 +29,22 @@ public class ServicioDTO {
     private LocalTime hora;
 
     private String duracionEstimada;
+
     private String observaciones;
+
     private String prioridad;
+
     private String estado;
 
-    // Si no envías activo, será true
-    private Boolean activo = true;
+    private Boolean activo;
 
-    // Por defecto, NO tiene cotización
-    private Boolean servicioSinCotizacion = false;
+    private Boolean servicioSinCotizacion;
 
     private String idTipoServicio;
+
     private LocalDateTime fechaCreacion;
 
-    // Info para la UI
+    // Campos adicionales para mostrar en la UI
     private String nombreCliente;
     private String telefonoCliente;
     private String correoCliente;
