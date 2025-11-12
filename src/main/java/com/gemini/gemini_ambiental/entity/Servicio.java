@@ -22,7 +22,7 @@ public class Servicio {
     private String idServicio;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "id_cotizacion")
+    @JoinColumn(name = "id_cotizacion", nullable = true)
     private Cotizacion cotizacion;
 
     @ManyToOne(fetch = FetchType.LAZY)

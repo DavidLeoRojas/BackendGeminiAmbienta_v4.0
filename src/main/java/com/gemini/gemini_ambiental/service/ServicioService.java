@@ -49,44 +49,55 @@ public class ServicioService {
         return convertToDTO(servicio);
     }
 
-    public ServicioDTO createServicio(ServicioDTO servicioDTO) {
+    public ServicioDTO createServicio(ServicioDTO dto) {
+
+        // Generar ID si no viene
+        if (dto.getIdServicio() == null || dto.getIdServicio().isEmpty()) {
+            dto.setIdServicio(java.util.UUID.randomUUID().toString());
+        }
+
         Servicio servicio = new Servicio();
+        servicio.setIdServicio(dto.getIdServicio());
+        servicio.setFecha(dto.getFecha());
+        servicio.setHora(dto.getHora());
+        servicio.setDuracionEstimada(dto.getDuracionEstimada());
+        servicio.setObservaciones(dto.getObservaciones());
+        servicio.setPrioridad(dto.getPrioridad() != null ? dto.getPrioridad() : "Normal");
+        servicio.setEstado(mapStringToEstado(dto.getEstado()));
+        servicio.setActivo(dto.getActivo() != null ? dto.getActivo() : true);
+        servicio.setFechaCreacion(java.time.LocalDateTime.now());
 
-        servicio.setFecha(servicioDTO.getFecha());
-        servicio.setHora(servicioDTO.getHora());
-        servicio.setEstado(mapStringToEstado(servicioDTO.getEstado()));
-        servicio.setObservaciones(servicioDTO.getObservaciones());
-        servicio.setPrioridad(servicioDTO.getPrioridad());
-        servicio.setDuracionEstimada(servicioDTO.getDuracionEstimada());
-        servicio.setServicioSinCotizacion(servicioDTO.getServicioSinCotizacion());
+        // Relación Cliente
+        Persona cliente = personaRepository.findByDni(dto.getDniCliente())
+                .orElseThrow(() -> new RuntimeException("Cliente no encontrado: " + dto.getDniCliente()));
+        servicio.setCliente(cliente);
 
-        if (servicioDTO.getIdCotizacion() != null) {
-            Cotizacion cotizacion = cotizacionRepository.findById(servicioDTO.getIdCotizacion())
-                    .orElseThrow(() -> new RuntimeException("Cotización no encontrada con ID: " + servicioDTO.getIdCotizacion()));
-            servicio.setCotizacion(cotizacion);
+        // Relación Técnico
+        Persona tecnico = personaRepository.findByDni(dto.getDniEmpleadoAsignado())
+                .orElseThrow(() -> new RuntimeException("Técnico no encontrado: " + dto.getDniEmpleadoAsignado()));
+        servicio.setEmpleadoAsignado(tecnico);
+
+        // Relación Tipo Servicio
+        TipoServicio tipoServicio = tipoServicioRepository.findById(dto.getIdTipoServicio())
+                .orElseThrow(() -> new RuntimeException("Tipo servicio no encontrado: " + dto.getIdTipoServicio()));
+        servicio.setTipoServicio(tipoServicio);
+
+        // Manejo de cotización
+        if (Boolean.TRUE.equals(dto.getServicioSinCotizacion())) {
+            servicio.setCotizacion(null);
+        } else if (dto.getIdCotizacion() != null) {
+            Cotizacion cot = cotizacionRepository.findById(dto.getIdCotizacion())
+                    .orElseThrow(() -> new RuntimeException("Cotización no encontrada: " + dto.getIdCotizacion()));
+            servicio.setCotizacion(cot);
+        } else {
+            servicio.setCotizacion(null);
         }
 
-        if (servicioDTO.getDniCliente() != null) {
-            Persona cliente = personaRepository.findByDni(servicioDTO.getDniCliente())
-                    .orElseThrow(() -> new RuntimeException("Cliente no encontrado con DNI: " + servicioDTO.getDniCliente()));
-            servicio.setCliente(cliente);
-        }
+        servicioRepository.save(servicio);
 
-        if (servicioDTO.getDniEmpleadoAsignado() != null) {
-            Persona tecnico = personaRepository.findByDni(servicioDTO.getDniEmpleadoAsignado())
-                    .orElseThrow(() -> new RuntimeException("Técnico no encontrado con DNI: " + servicioDTO.getDniEmpleadoAsignado()));
-            servicio.setEmpleadoAsignado(tecnico);
-        }
-
-        if (servicioDTO.getIdTipoServicio() != null) {
-            TipoServicio tipoServ = tipoServicioRepository.findById(servicioDTO.getIdTipoServicio())
-                    .orElseThrow(() -> new RuntimeException("Tipo de Servicio no encontrado con ID: " + servicioDTO.getIdTipoServicio()));
-            servicio.setTipoServicio(tipoServ);
-        }
-
-        Servicio savedServicio = servicioRepository.save(servicio);
-        return convertToDTO(savedServicio);
+        return convertToDTO(servicio);
     }
+
 
     public ServicioDTO updateServicio(String id, ServicioDTO servicioDTO) {
         Servicio servicio = servicioRepository.findById(id)
@@ -160,18 +171,47 @@ public class ServicioService {
 
     private ServicioDTO convertToDTO(Servicio servicio) {
         ServicioDTO dto = new ServicioDTO();
+
         dto.setIdServicio(servicio.getIdServicio());
-        dto.setIdCotizacion(servicio.getCotizacion() != null ? servicio.getCotizacion().getIdCotizacion() : null);
-        dto.setDniCliente(servicio.getCliente() != null ? servicio.getCliente().getDni() : null);
-        dto.setDniEmpleadoAsignado(servicio.getEmpleadoAsignado() != null ? servicio.getEmpleadoAsignado().getDni() : null);
-        dto.setIdTipoServicio(servicio.getTipoServicio() != null ? servicio.getTipoServicio().getIdTipoServicio() : null);
         dto.setFecha(servicio.getFecha());
         dto.setHora(servicio.getHora());
-        dto.setEstado(servicio.getEstado().name()); // ✅ Usa .name() para devolver "PROGRAMADO", no "Programado"
-        dto.setObservaciones(servicio.getObservaciones());
         dto.setPrioridad(servicio.getPrioridad());
         dto.setDuracionEstimada(servicio.getDuracionEstimada());
-        dto.setServicioSinCotizacion(servicio.getServicioSinCotizacion());
+        dto.setObservaciones(servicio.getObservaciones());
+        dto.setEstado(servicio.getEstado().name());
+        dto.setActivo(servicio.getActivo());
+        dto.setFechaCreacion(servicio.getFechaCreacion());
+
+        // Cliente
+        if (servicio.getCliente() != null) {
+            dto.setDniCliente(servicio.getCliente().getDni());
+            dto.setNombreCliente(servicio.getCliente().getNombre());
+            dto.setTelefonoCliente(servicio.getCliente().getTelefono());
+            dto.setCorreoCliente(servicio.getCliente().getCorreo());
+        }
+
+        // Técnico
+        if (servicio.getEmpleadoAsignado() != null) {
+            dto.setDniEmpleadoAsignado(servicio.getEmpleadoAsignado().getDni());
+            dto.setNombreEmpleado(servicio.getEmpleadoAsignado().getNombre());
+            dto.setTelefonoEmpleado(servicio.getEmpleadoAsignado().getTelefono());
+            dto.setCorreoEmpleado(servicio.getEmpleadoAsignado().getCorreo());
+        }
+
+        // Tipo servicio
+        if (servicio.getTipoServicio() != null) {
+            dto.setIdTipoServicio(servicio.getTipoServicio().getIdTipoServicio());
+        }
+
+        // Cotización
+        if (servicio.getCotizacion() != null) {
+            dto.setIdCotizacion(servicio.getCotizacion().getIdCotizacion());
+            dto.setServicioSinCotizacion(false);
+        } else {
+            dto.setServicioSinCotizacion(true);
+        }
+
         return dto;
     }
+
 }
